@@ -23,9 +23,6 @@
 ;;    You should have received a copy of the GNU General Public License
 ;;    along with this program; if not, write to the Free Software
 ;;    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-;;
-;;    If you have any problems to report, or suggestions, please send them
-;;    to p4el-bugs@lists.sourceforge.net
 
 ;; LCD Archive Entry:
 ;; p4|Rajesh Vaidheeswarran|rv@NoSpAm.lOsEtHiS.dsmit.com|
@@ -85,12 +82,6 @@
     (eval-when-compile
       (require 'timer)
       (require 'dired)))
-
-(defvar p4-emacs-maintainer
-  "p4.el maintainers <p4el-bugs@lists.sourceforge.net>"
-  "The maintainer(s) of the emacs-p4 integration. Used for bug reports.")
-
-(defvar p4-web-page "http://p4el.sourceforge.net/" "The home of p4.el.")
 
 ;; For flavors of Emacs which don't define `defgroup' and `defcustom'.
 (eval-when-compile
@@ -659,9 +650,7 @@ the last popped element to restore the window configuration."
       ["Get P4 Notification List"  p4-get-notify-list p4-notify]
       ["--" nil nil]
       ["Describe Key Bindings"  p4-describe-bindings t]
-      ["Check for later versions of p4.el" p4-browse-web-page t]
-      ["--" nil nil]
-      ["Report Bug in p4.el"  p4-bug-report t])
+      )
     "The P4 menu definition")
 
   (cond (p4-running-xemacs
@@ -3177,43 +3166,6 @@ making the file writable and write protected."
 	      (setq mode (logand mode (lognot 128)))
 	    (setq mode (logior mode 128)))
 	  (set-file-modes buffer-file-name mode))))))
-
-(defun p4-browse-web-page ()
-  "Browse the p4.el web page."
-  (interactive)
-  (require 'browse-url)
-  (browse-url p4-web-page))
-
-(defun p4-bug-report ()
-  (interactive)
-  (if (string-match " 19\\." (emacs-version))
-      ;; unfortunately GNU Emacs 19.x doesn't have compose-mail
-      (mail nil p4-emacs-maintainer (concat "BUG REPORT: "
-					    (p4-emacs-version)))
-    (compose-mail p4-emacs-maintainer (concat "BUG REPORT: "
-					      (p4-emacs-version))))
-  (goto-char (point-min))
-  (re-search-forward (concat "^" (regexp-quote mail-header-separator) "\n"))
-  ;; Insert warnings for novice users.
-  (insert
-   "This bug report will be sent to the P4-Emacs Integration Maintainer,\n"
-   p4-emacs-maintainer "\n\n")
-  (insert (concat (emacs-version) "\n\n"))
-  (insert "A brief description of the problem and how to reproduce it:\n")
-  (save-excursion
-    (let ((message-buf (get-buffer
-			(cond (p4-running-xemacs " *Message-Log*")
-			      (p4-running-emacs "*Messages*")))))
-      (if message-buf
-	  (let (beg-pos
-		(end-pos (point-max)))
-	    (save-excursion
-	      (set-buffer message-buf)
-	      (goto-char end-pos)
-	      (forward-line -10)
-	      (setq beg-pos (point)))
-	    (insert "\n\nRecent messages:\n")
-	    (insert-buffer-substring message-buf beg-pos end-pos))))))
 
 (defun p4-describe-bindings ()
   "A function to list the key bindings for the p4 prefix map"
