@@ -520,7 +520,6 @@ Does auto re-highlight management (whatever that is)."
 	     (apply 'call-process (p4-check-p4-executable) nil
 		    output-buffer
 		    nil			; update display?
-		    "-d" default-directory  ;override "PWD" env var
 		    args)))
 	(goto-char (point-min))
 	(if (and (not no-login)
@@ -541,13 +540,12 @@ Executes p4 in the current buffer (generally a temp)."
     (apply 'call-process (p4-check-p4-executable) nil
 	   t
 	   nil			; update display?
-	   "-d" default-directory  ;override "PWD" env var
 	   args))
 
 (defun p4-start-p4 (buffer args)
   "Start P4 command asynchronously.
 Return process object"
-  (apply 'start-process "P4" buffer (p4-check-p4-executable) "-d" default-directory args))
+  (apply 'start-process "P4" buffer (p4-check-p4-executable) args))
 
 (defun p4-push-window-config ()
   "Push the current window configuration on the `p4-window-config-stack'
@@ -1827,7 +1825,7 @@ it already exists\), set its local map to map, if specified, or
 	    (goto-char (point-max))
 	    (insert "\n--------\n\n"))))
     (setq args (cons "resolve" args))
-    (setq buffer (apply 'make-comint "p4 resolve" p4-executable nil "-d" default-directory args))
+    (setq buffer (apply 'make-comint "p4 resolve" p4-executable nil args))
     (set-buffer buffer)
     (comint-mode)
     (display-buffer buffer)
@@ -2428,7 +2426,6 @@ arguments to P4-OUT-COMMAND."
     (cd dir))
   (if (zerop (apply 'call-process-region (point-min) (point-max)
 		    (p4-check-p4-executable) t t nil
-		    "-d" default-directory
 		    p4-form-current-command "-o"
 		    p4-in-args))
       (progn
@@ -2463,7 +2460,6 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
     (if (zerop (apply 'call-process-region (point-min)
 		      max (p4-check-p4-executable)
 		      nil '(t t) nil
-		      "-d" default-directory
 		      current-command "-i"
 		      current-args))
 	(progn
@@ -2922,7 +2918,6 @@ list."
 		(call-process-region (point-min) (point-max)
 				     (p4-check-p4-executable)
 				     t t nil
-				     "-d" default-directory
 				     "describe" "-s"
 				     p4-matched-change)
 		(switch-to-buffer "*P4 Notify*")
