@@ -392,7 +392,7 @@ arguments to p4 commands."
   :type 'integer
   :group 'p4)
 
-(defvar p4-basic-map
+(defvar p4-basic-mode-map
   (let ((map (make-sparse-keymap)))
     (cond (p4-running-xemacs
 	   (define-key map [button2] 'p4-buffer-mouse-clicked)
@@ -413,6 +413,8 @@ arguments to p4 commands."
     (define-key map "="	 'p4-delete-other-windows)
     map))
 
+(define-derived-mode p4-basic-mode nil "P4 Basic")
+
 (defvar p4-form-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map "\C-c\C-c" 'p4-form-commit)
@@ -430,7 +432,7 @@ arguments to p4 commands."
     map))
 
 (defvar p4-filelog-map
-  (let ((map (p4-make-derived-map p4-basic-map)))
+  (let ((map (p4-make-derived-map p4-basic-mode-map)))
     (define-key map "d"	 'p4-diff2)
     (define-key map "f"	 'p4-find-file-other-window)
     (define-key map "s"	 'p4-filelog-short-format)
@@ -450,7 +452,7 @@ arguments to p4 commands."
   "The key map to use for selecting filelog properties.")
 
 (defvar p4-opened-map
-  (let ((map (p4-make-derived-map p4-basic-map)))
+  (let ((map (p4-make-derived-map p4-basic-mode-map)))
     (define-key map "n"	 'p4-next-depot-file)
     (define-key map "p"	 'p4-prev-depot-file)
     (define-key map "N" (lookup-key map "p"))
@@ -458,7 +460,7 @@ arguments to p4 commands."
   "The key map to use for selecting opened files.")
 
 (defvar p4-diff-map
-  (let ((map (p4-make-derived-map p4-basic-map)))
+  (let ((map (p4-make-derived-map p4-basic-mode-map)))
     (define-key map "n"	 'p4-goto-next-diff)
     (define-key map "p"	 'p4-goto-prev-diff)
     (define-key map "N" (lookup-key map "p"))
@@ -467,7 +469,7 @@ arguments to p4 commands."
     map))
 
 (defvar p4-print-rev-map
-  (let ((map (p4-make-derived-map p4-basic-map)))
+  (let ((map (p4-make-derived-map p4-basic-mode-map)))
     (define-key map "n"	 'p4-next-change-rev-line)
     (define-key map "p"	 'p4-prev-change-rev-line)
     (define-key map "N" (lookup-key map "p"))
@@ -476,6 +478,18 @@ arguments to p4 commands."
   "The key map to use for browsing print-revs buffers.")
 
 ;;; All functions start here.
+
+(defun p4-make-output-buffer (buffer-name mode)
+  "Make read only buffer and return the buffer."
+  (let ((dir default-directory)
+	(inhibit-read-only t))
+    (with-current-buffer (get-buffer-create buffer-name)
+      (erase-buffer)
+      (funcall mode)
+      (setq buffer-read-only t)
+      (setq buffer-undo-list t)
+      (cd dir)
+      (current-buffer))))
 
 ;; A generic function that we use to execute p4 commands
 ;; If executing the p4 command fails with a "password invalid" error
@@ -748,17 +762,17 @@ controlled files."
       (revert-buffer t t)))
 
 (defun p4-async-command-process-sentinel (callback process message)
-  (let ((buffer (process-buffer process)))
+  (let ((inhibit-read-only t)
+	(buffer (process-buffer process)))
     (when (buffer-live-p buffer)
       (with-current-buffer buffer
 	(insert "Process " (process-name process) " " message)
-	(funcall callback)))))
+	(funcall callback)
+	(set-buffer-modified-p nil)))))
 
 (defun p4-async-command (cmd arguments buffer-name callback)
-  (let ((buffer (get-buffer-create buffer-name))
+  (let ((buffer (p4-make-output-buffer buffer-name 'p4-basic-mode))
 	process)
-    (with-current-buffer buffer
-      (erase-buffer))
     (setq process (p4-start-p4 buffer (cons cmd arguments)))
     (lexical-let ((callback callback))
       (set-process-sentinel process
@@ -1733,13 +1747,13 @@ Argument ARG command for which help is needed.
 (defun p4-make-basic-buffer (buf-name &optional map)
   "rename `p4-output-buffer-name' to buf-name \(which will be killed first if
 it already exists\), set its local map to map, if specified, or
-`p4-basic-map' otherwise. Makes the buffer read only."
+`p4-basic-mode-map' otherwise. Makes the buffer read only."
   (get-buffer-create buf-name)
   (kill-buffer buf-name)
   (set-buffer p4-output-buffer-name)
   (goto-char (point-min))
   (rename-buffer buf-name t)
-  (use-local-map (if (keymapp map) map p4-basic-map))
+  (use-local-map (if (keymapp map) map p4-basic-mode-map))
   (setq buffer-read-only t)
   (p4-move-buffer-point-to-top buf-name))
 
