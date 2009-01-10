@@ -342,29 +342,15 @@ between them, that text will be marked with this face."
     (setq minor-mode-map-alist
 	  (cons '(p4-offline-mode . p4-minor-map) minor-mode-map-alist)))
 
-(defvar p4-async-minor-mode nil
-  "The minor mode for editing p4 asynchronous command buffers.")
-(make-variable-buffer-local 'p4-async-minor-mode)
-(defvar p4-async-minor-map (make-sparse-keymap) "Keymap for p4 async minor mode")
-(fset 'p4-async-minor-map p4-async-minor-map)
+(defvar p4-form-current-command nil)
+(make-variable-buffer-local 'p4-form-current-command)
+(put 'p4-form-current-command 'permanent-local t)
+(set-default 'p4-form-current-command nil)
 
-(or (assoc 'p4-async-minor-mode minor-mode-alist)
-    (setq minor-mode-alist
-	  (cons '(p4-async-minor-mode " P4") minor-mode-alist)))
-
-(or (assoc 'p4-async-minor-mode minor-mode-map-alist)
-    (setq minor-mode-map-alist
-	  (cons '(p4-async-minor-mode . p4-async-minor-map) minor-mode-map-alist)))
-
-(defvar p4-current-command nil)
-(make-variable-buffer-local 'p4-current-command)
-(put 'p4-current-command 'permanent-local t)
-(set-default 'p4-current-command nil)
-
-(defvar p4-current-args nil)
-(make-variable-buffer-local 'p4-current-args)
-(put 'p4-current-args 'permanent-local t)
-(set-default 'p4-current-args nil)
+(defvar p4-form-current-args nil)
+(make-variable-buffer-local 'p4-form-current-args)
+(put 'p4-form-current-args 'permanent-local t)
+(set-default 'p4-form-current-args nil)
 
 ;; To check if the current buffer's modeline and menu need to be altered
 (defvar p4-vc-check nil)
@@ -405,10 +391,6 @@ variable to 0 to disable periodic refreshing."
   :type 'integer
   :group 'p4)
 
-(defvar p4-async-command-hook nil
-  "This hook is run after an async buffer has been set up by
-`p4-async-process-command'")
-
 (defvar p4-window-config-stack nil
   "Stack of saved window configurations.")
 
@@ -442,6 +424,17 @@ arguments to p4 commands."
     (define-key map ">"	 'p4-bottom-of-buffer)
     (define-key map "="	 'p4-delete-other-windows)
     map))
+
+(defvar p4-form-mode-map
+  (let ((map (make-sparse-keymap)))
+    (define-key map "\C-c\C-c" 'p4-form-commit)
+    map)
+  "Keymap for P4 form mode.")
+
+(define-derived-mode p4-form-mode indented-text-mode "P4 Form"
+  "Major mode for P4 form derived from `indented-text-mode'"
+  (setq fill-column 80
+	indent-tabs-mode t))
 
 (defun p4-make-derived-map (base-map)
   (let (map)
@@ -2045,12 +2038,12 @@ character events"
 	  (change (p4-describe-internal
 		   (append (p4-make-list-from-string p4-default-diff-options)
 			   (list change))))
-	  (user (p4-async-process-command "user" nil
+	  (user (p4-form-command "user" nil
 					  (concat
 					   "*P4 User: " user "*")
 					  "user" (list user)))
 	  (group (p4-group group))
-	  (client (p4-async-process-command
+	  (client (p4-form-command
 		   "client" "Description:\n\t"
 		   (concat "*P4 Client: " client "*") "client" (list client)))
 	  (label (p4-label (list label)))
@@ -2380,12 +2373,12 @@ character events"
     (p4-noinput-buffer-action "where" nil 's args)))
 
 
-(defun p4-async-process-command (p4-this-command &optional
-						 p4-regexp
-						 p4-this-buffer
-						 p4-out-command
-						 p4-in-args
-						 p4-out-args)
+(defun p4-form-command (p4-this-command &optional
+					p4-regexp
+					p4-this-buffer
+					p4-out-command
+					p4-in-args
+					p4-out-args)
   "Internal function to call an asynchronous process with a local buffer,
 instead of calling an external client editor to run within emacs.
 
@@ -2398,7 +2391,7 @@ on.
 P4-THIS-BUFFER is the optional buffer to create. (Default is *P4 <command>*).
 
 P4-OUT-COMMAND is the optional command that will be used as the command to
-be called when `p4-async-call-process' is called.
+be called when `p4-form-commit' is called.
 
 P4-IN-ARGS is the optional argument passed that will be used as the list of
 arguments to the P4-THIS-COMMAND.
@@ -2409,12 +2402,12 @@ arguments to P4-OUT-COMMAND."
     (if p4-this-buffer
 	(set-buffer (get-buffer-create p4-this-buffer))
       (set-buffer (get-buffer-create (concat "*P4 " p4-this-command "*"))))
-    (setq p4-current-command p4-this-command)
+    (setq p4-form-current-command p4-this-command)
     (cd dir))
   (if (zerop (apply 'call-process-region (point-min) (point-max)
 		    (p4-check-p4-executable) t t nil
 		    "-d" default-directory
-		    p4-current-command "-o"
+		    p4-form-current-command "-o"
 		    p4-in-args))
       (progn
 	(goto-char (point-min))
@@ -2423,31 +2416,27 @@ arguments to P4-OUT-COMMAND."
 			"# Type C-x k to kill current changes.\n"
 			"#\n"))
 	(if p4-regexp (re-search-forward p4-regexp))
-	(indented-text-mode)
-	(setq p4-async-minor-mode t)
-	(setq fill-column 79)
+	(p4-form-mode)
 	(p4-push-window-config)
 	(switch-to-buffer-other-window (current-buffer))
 	(if p4-out-command
-	    (setq p4-current-command p4-out-command))
-	(setq p4-current-args p4-out-args)
+	    (setq p4-form-current-command p4-out-command))
+	(setq p4-form-current-args p4-out-args)
 	(setq buffer-offer-save t)
 
-	(define-key p4-async-minor-map "\C-c\C-c" 'p4-async-call-process)
-	(run-hooks 'p4-async-command-hook)
 	(set-buffer-modified-p nil)
 	(message "C-c C-c to finish editing and exit buffer."))
     (error "%s %s -o failed to complete successfully."
-	   (p4-check-p4-executable) p4-current-command)))
+	   (p4-check-p4-executable) p4-form-current-command)))
 
-(defun p4-async-call-process ()
-  "Internal function called by `p4-async-process-command' to process the
+(defun p4-form-commit ()
+  "Internal function called by `p4-form-command' to process the
 buffer after editing is done using the minor mode key mapped to `C-c C-c'."
   (interactive)
-  (message "p4 %s ..." p4-current-command)
+  (message "p4 %s ..." p4-form-current-command)
   (let ((max (point-max)) msg
-	(current-command p4-current-command)
-	(current-args p4-current-args))
+	(current-command p4-form-current-command)
+	(current-args p4-form-current-args))
     (goto-char max)
     (if (zerop (apply 'call-process-region (point-min)
 		      max (p4-check-p4-executable)
@@ -2494,7 +2483,7 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
 		      (p4-read-arg-string "p4 change: " nil))))
       (if (p4-cmd-line-flags args)
 	  (p4-noinput-buffer-action "change" nil t args)
-	(p4-async-process-command "change" "Description:\n\t"
+	(p4-form-command "change" "Description:\n\t"
 				  change-buf-name nil args)))))
 
 ;; The p4 client command
@@ -2510,7 +2499,7 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
 		      (p4-read-arg-string "p4 client: " nil "client"))))
       (if (p4-cmd-line-flags args)
 	  (p4-noinput-buffer-action "client" nil t args)
-	(p4-async-process-command "client" "\\(Description\\|View\\):\n\t"
+	(p4-form-command "client" "\\(Description\\|View\\):\n\t"
 				  client-buf-name nil args)))))
 
 (defp4cmd p4-clients ()
@@ -2529,7 +2518,7 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
       (error "Branch must be specified!")
     (if (p4-cmd-line-flags args)
 	(p4-noinput-buffer-action "branch" nil t args)
-      (p4-async-process-command "branch" "Description:\n\t"
+      (p4-form-command "branch" "Description:\n\t"
 				(concat "*P4 Branch: "
 					(car (reverse args)) "*")
 				"branch" args))))
@@ -2550,7 +2539,7 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
       (error "label must be specified!")
     (if (p4-cmd-line-flags args)
 	(p4-noinput-buffer-action "label" nil t args)
-      (p4-async-process-command "label" "Description:\n\t"
+      (p4-form-command "label" "Description:\n\t"
 				(concat "*P4 label: "
 					(car (reverse args)) "*")
 				"label" args))))
@@ -2601,7 +2590,7 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
 		(ding t)
 		(yes-or-no-p
 		 "File with empty diff opened for edit. Submit anyway? ")))
-	  (p4-async-process-command "change" "Description:\n\t"
+	  (p4-form-command "change" "Description:\n\t"
 				    submit-buf-name "submit" args)))))
 
 ;; The p4 user command
@@ -2611,7 +2600,7 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
 		(p4-read-arg-string "p4 user: " nil "user")))
   (if (p4-cmd-line-flags args)
       (p4-noinput-buffer-action "user" nil t args)
-    (p4-async-process-command "user" nil nil nil args)))
+    (p4-form-command "user" nil nil nil args)))
 
 ;; The p4 group command
 (defp4cmd p4-group (&rest args)
@@ -2620,7 +2609,7 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
 		(p4-read-arg-string "p4 group: " nil "group")))
   (if (p4-cmd-line-flags args)
       (p4-noinput-buffer-action "group" nil t args)
-    (p4-async-process-command "group" nil nil nil args)))
+    (p4-form-command "group" nil nil nil args)))
 
 ;; The p4 job command
 (defp4cmd p4-job (&rest args)
@@ -2629,13 +2618,13 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
 		(p4-read-arg-string "p4 job: " nil "job")))
   (if (p4-cmd-line-flags args)
       (p4-noinput-buffer-action "job" nil t args)
-    (p4-async-process-command "job" "Description:\n\t" nil nil args)))
+    (p4-form-command "job" "Description:\n\t" nil nil args)))
 
 ;; The p4 jobspec command
 (defp4cmd p4-jobspec ()
   "jobspec" "To edit the job template, type \\[p4-jobspec].\n"
   (interactive)
-  (p4-async-process-command "jobspec"))
+  (p4-form-command "jobspec"))
 
 ;; A function to set the current P4 client name
 (defun p4-set-client-name (p4-new-client-name)
