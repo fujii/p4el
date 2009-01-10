@@ -65,18 +65,20 @@
 
 ;;; Code:
 
+(eval-when-compile
+  (require 'cl))
+
 (defvar p4-emacs-version "10.7" "The Current P4-Emacs Integration Revision.")
 
 ;; Find out what type of emacs we are running in. We will be using this
 ;; quite a few times in this program.
-(eval-and-compile
-  (defvar p4-running-emacs nil
-    "If the current Emacs is not XEmacs, then, this is non-nil.")
-  (defvar p4-running-xemacs nil
-    "If the current Emacs is XEmacs/Lucid, then, this is non-nil.")
-  (if (string-match "XEmacs\\|Lucid" emacs-version)
-      (setq p4-running-xemacs t)
-    (setq p4-running-emacs t)))
+(defvar p4-running-emacs nil
+  "If the current Emacs is not XEmacs, then, this is non-nil.")
+(defvar p4-running-xemacs nil
+  "If the current Emacs is XEmacs/Lucid, then, this is non-nil.")
+(if (string-match "XEmacs\\|Lucid" emacs-version)
+    (setq p4-running-xemacs t)
+  (setq p4-running-emacs t))
 
 ;; Pick up a couple of missing function defs
 (if p4-running-xemacs
@@ -195,8 +197,7 @@ command."
   :type 'sexp
   :group 'p4)
 
-(eval-and-compile
-  (defvar p4-output-buffer-name "*P4 Output*" "P4 Output Buffer."))
+(defvar p4-output-buffer-name "*P4 Output*" "P4 Output Buffer.")
 
 ;; Set this variable in .emacs if you want p4-set-client-name to complete
 ;; your client name for you.
@@ -512,7 +513,6 @@ arguments to p4 commands."
 ;; If executing the p4 command fails with a "password invalid" error
 ;; and no-login is false, p4-login will be called to let the user
 ;; login. The failed command will then be retried.
-(eval-and-compile
   (defun p4-exec-p4 (output-buffer args &optional clear-output-buffer
 				   no-login)
     "Internal function called by various p4 commands.
@@ -558,7 +558,7 @@ Executes p4 in the current buffer (generally a temp)."
 	   t
 	   nil			; update display?
 	   "-d" default-directory  ;override "PWD" env var
-	   args)))
+	   args))
 
 (defun p4-push-window-config ()
   "Push the current window configuration on the `p4-window-config-stack'
@@ -591,7 +591,6 @@ the last popped element to restore the window configuration."
 (defalias 'p4-toggle-vc-mode-off 'p4-toggle-vc-mode)
 (defalias 'p4-toggle-vc-mode-on 'p4-toggle-vc-mode)
 
-(eval-and-compile
   (defvar p4-menu-def
     '(["Specify Arguments..." universal-argument t]
       ["--" nil nil]
@@ -723,18 +722,6 @@ the P4 depot or in the current client view.."
 	   (easy-menu-add (p4-mode-menu "P4"))))
     t)
 
-  (defun p4-help-text (cmd text)
-    (if cmd
-	(let ((buf (generate-new-buffer p4-output-buffer-name))
-	      (help-text ""))
-	  (if (= (p4-exec-p4 buf (list "help" cmd) t) 0)
-	      (setq help-text (save-excursion
-				(set-buffer buf)
-				(buffer-string))))
-	  (kill-buffer buf)
-	  (concat text help-text))
-      text))
-
   ;; To set the path to the p4 executable
   (defun p4-set-p4-executable (p4-exe-name)
     "Set the path to the correct P4 Executable.
@@ -747,7 +734,7 @@ To set this as a part of the .emacs, add the following to your .emacs:
 Argument P4-EXE-NAME The new value of the p4 executable, with full path."
     (interactive "fFull path to your P4 executable: " )
     (setq p4-executable p4-exe-name)
-    p4-executable))
+    p4-executable)
 
 ;; The kill-buffer hook for p4.
 (defun p4-kill-buffer-hook ()
@@ -756,6 +743,21 @@ controlled files."
   (if p4-vc-check
       (p4-refresh-refresh-list (p4-buffer-file-name)
 			       (buffer-name))))
+
+(eval-and-compile
+  (defvar p4-include-help-to-command-docstring
+    (let (val)
+      (eval-when (compile) (setq val t))
+      val))
+
+  (defun p4-help-text (cmd text)
+    (concat text 
+	    (with-temp-buffer
+	      (if (and p4-include-help-to-command-docstring
+		       (file-executable-p p4-executable)
+		       (zerop (call-process p4-executable nil t nil "help" cmd)))
+		  (buffer-substring (point-min) (point-max))
+		"")))))
 
 (defmacro defp4cmd (fkn &rest all-args)
   (let ((args (car all-args))
