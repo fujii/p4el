@@ -59,7 +59,8 @@
 ;;
 ;; Then add the library like this:
 ;;
-;; (load-library "p4")
+;; (require 'p4)
+;; (define-key global-map "\C-cp" 'p4-prefix-map)
 ;;
 
 ;;; Code:
@@ -2806,8 +2807,7 @@ the current value of P4PORT."
     map)
   "The Prefix for P4 Library Commands.")
 
-(if (not (keymapp (lookup-key global-map "\C-xp")))
-    (define-key global-map "\C-xp" p4-prefix-map))
+(fset 'p4-prefix-map p4-prefix-map)
 
 ;; For users interested in notifying a change, a notification list can be
 ;; set up using this function.
