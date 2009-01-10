@@ -544,6 +544,11 @@ Executes p4 in the current buffer (generally a temp)."
 	   "-d" default-directory  ;override "PWD" env var
 	   args))
 
+(defun p4-start-p4 (buffer args)
+  "Start P4 command asynchronously.
+Return process object"
+  (apply 'start-process "P4" buffer (p4-check-p4-executable) "-d" default-directory args))
+
 (defun p4-push-window-config ()
   "Push the current window configuration on the `p4-window-config-stack'
 stack."
@@ -788,6 +793,26 @@ controlled files."
 	  (display-buffer p4-output-buffer-name t))))
   (if (and do-revert (p4-buffer-file-name))
       (revert-buffer t t)))
+
+(defun p4-async-command-process-sentinel (callback process message)
+  (let ((buffer (process-buffer process)))
+    (when (buffer-live-p buffer)
+      (with-current-buffer buffer
+	(insert "Process " (process-name process) " " message)
+	(funcall callback)))))
+
+(defun p4-async-command (cmd arguments buffer-name callback)
+  (let ((buffer (get-buffer-create buffer-name))
+	process)
+    (with-current-buffer buffer
+      (erase-buffer))
+    (setq process (p4-start-p4 buffer (cons cmd arguments)))
+    (lexical-let ((callback callback))
+      (set-process-sentinel process
+			    (lambda (process message)
+			      (p4-async-command-process-sentinel callback process message))))
+    (display-buffer buffer)
+    process))
 
 ;; The p4 edit command
 (defp4cmd p4-edit (show-output)
@@ -1295,12 +1320,8 @@ name and a client name."
       (delete-region pmin (point-max)))
     files))
 
-(defun p4-make-depot-list-buffer (bufname &optional print-buffer)
-  "Take the p4-output-buffer-name buffer, rename it to bufname, and
-make all depot file names active, so that clicking them opens
-the corresponding client file."
+(defun p4-mark-depot-list-buffer (&optional print-buffer)
   (let (args files depot-regexp)
-    (set-buffer p4-output-buffer-name)
     (goto-char (point-min))
     (setq depot-regexp
 	  (if print-buffer
@@ -1309,10 +1330,6 @@ the corresponding client file."
     (while (re-search-forward depot-regexp nil t)
       (setq args (cons (match-string 2) args)))
     (setq files (p4-map-depot-files args))
-    (get-buffer-create bufname);; We do these two lines
-    (kill-buffer bufname);; to ensure no duplicates
-    (set-buffer p4-output-buffer-name)
-    (rename-buffer bufname t)
     (goto-char (point-min))
     (while (re-search-forward depot-regexp nil t)
       (let ((p4-client-file (cdr (assoc (match-string 2) files)))
@@ -1357,10 +1374,21 @@ the corresponding client file."
 	   (append (list (cons 'face 'p4-depot-added-face))
 		   prop-list)))
 	 (t
-	  (p4-create-active-link start end prop-list)))))
-    (use-local-map p4-opened-map)
-    (setq buffer-read-only t)
-    (p4-move-buffer-point-to-top bufname)))
+	  (p4-create-active-link start end prop-list)))))))
+
+(defun p4-make-depot-list-buffer (bufname &optional print-buffer)
+  "Take the p4-output-buffer-name buffer, rename it to bufname, and
+make all depot file names active, so that clicking them opens
+the corresponding client file."
+  (set-buffer p4-output-buffer-name)
+  (get-buffer-create bufname) ;; We do these two lines
+  (kill-buffer bufname)	      ;; to ensure no duplicates
+  (set-buffer p4-output-buffer-name)
+  (rename-buffer bufname t)
+  (p4-mark-depot-list-buffer print-buffer)
+  (use-local-map p4-opened-map)
+  (setq buffer-read-only t)
+  (p4-move-buffer-point-to-top bufname))
 
 ;; The p4 print command
 (defp4cmd p4-print ()
@@ -1713,10 +1741,10 @@ This is equivalent to \"sync -f\"
   (let (args)
     (if current-prefix-arg
 	(setq args (p4-make-list-from-string (p4-read-arg-string "p4 get: "))))
-    (p4-noinput-buffer-action "get" nil t args)
-    (p4-refresh-files-in-buffers)
-    (p4-make-depot-list-buffer
-     (concat "*P4 Get: (" (p4-current-client) ") " (car args) "*"))))
+    (p4-async-command "get" args (concat "*P4 Get: (" (p4-current-client) ")*")
+		      (lambda ()
+			(p4-refresh-files-in-buffers)
+			(p4-mark-depot-list-buffer)))))
 
 ;; The p4 have command
 (defp4cmd p4-have ()
