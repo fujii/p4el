@@ -62,6 +62,7 @@
 
 ;;; Code:
 
+(require 'easymenu)
 (eval-when-compile
   (require 'cl))
 
@@ -558,107 +559,81 @@ the last popped element to restore the window configuration."
 (defalias 'p4-toggle-vc-mode-off 'p4-toggle-vc-mode)
 (defalias 'p4-toggle-vc-mode-on 'p4-toggle-vc-mode)
 
-  (defvar p4-menu-def
-    '(["Specify Arguments..." universal-argument t]
-      ["--" nil nil]
-      ["Add Current to P4" p4-add
-       (and (p4-buffer-file-name) (not p4-mode))]
-      ["Check out/Edit"    p4-edit
-       (and (p4-buffer-file-name-2) (or (not p4-mode) buffer-read-only))]
-      ["Re-open"	       p4-reopen
-       (and (p4-buffer-file-name-2) (or (not p4-mode) (not buffer-read-only)))]
-      ["Revert File"  p4-revert
-       (and (p4-buffer-file-name-2) (or (not p4-mode) (not buffer-read-only)))]
-      ["Delete File from Depot"  p4-delete
-       (and (p4-buffer-file-name-2) (or (not p4-mode) buffer-read-only))]
-      ["Rename Depot File" p4-rename
-       (and (p4-buffer-file-name-2) (or (not p4-mode) buffer-read-only))]
-      ["Submit Changes"  p4-submit t]
-      ["--" nil nil]
-      ["Sync/Get Files from Depot" p4-get t]
-      ["--" nil nil]
-      ["Show Opened Files"	p4-opened t]
-      ["Filelog" p4-filelog (p4-buffer-file-name-2)]
-      ["Changes" p4-changes t]
-      ["Describe Change" p4-describe t]
-      ["--" nil nil]
-      ["Diff 2 Versions" p4-diff2 (p4-buffer-file-name-2)]
-      ["Diff Current" p4-diff t]
-      ["Diff All Opened Files" p4-diff-all-opened t]
-      ["Diff Current with Ediff"   p4-ediff
-       (and (p4-buffer-file-name) (not buffer-read-only) p4-mode)]
-      ["Diff 2 Versions with Ediff"   p4-ediff2 (p4-buffer-file-name-2)]
-      ["--" nil nil]
-      ["Schedule Integrations" p4-integ t]
-      ["Resolve Conflicts" p4-resolve t]
-      ["--" nil nil]
-      ["Print" p4-print (p4-buffer-file-name-2)]
-      ["Print with Revision History" p4-blame
-       (p4-buffer-file-name-2)]
-      ["Find File using Depot Spec" p4-depot-find-file
-       p4-do-find-file]
-      ["--" nil nil]
-      ["Edit a Branch Specification" p4-branch t]
-      ["Edit a Label Specification" p4-label t]
-      ["Edit a Client Specification" p4-client t]
-      ["Edit a User Specification" p4-user t]
-      ["--" nil nil]
-      ["Show Version" p4-emacs-version t]
-      ["Disable P4 VC Check"  p4-toggle-vc-mode-off
-       p4-do-find-file]
-      ["Enable P4 VC Check"	 p4-toggle-vc-mode-on
-       (not p4-do-find-file)]
-      ["--" nil nil]
-      ["Set P4 Config"  p4-set-client-config p4-do-find-file]
-      ["Get Current P4 Config"  p4-get-client-config
-       p4-do-find-file]
-      ["--" nil nil]
-      ["Set P4 Client"  p4-set-client-name p4-do-find-file]
-      ["Get Current P4 Client"  p4-get-client-name
-       p4-do-find-file]
-      ["--" nil nil]
-      ["Set P4 Server/Port"	 p4-set-p4-port p4-do-find-file]
-      ["Get Current P4 Server/Port"	 p4-get-p4-port
-       p4-do-find-file]
-      ["--" nil nil]
-      ["Set P4 Notification List"  p4-set-notify-list
-       p4-mode]
-      ["Get P4 Notification List"  p4-get-notify-list p4-notify]
-      )
-    "The P4 menu definition")
+(defvar p4-menu-spec
+  '(["Specify Arguments..." universal-argument t]
+    ["--" nil nil]
+    ["Add Current to P4" p4-add
+     (and (p4-buffer-file-name) (not p4-mode))]
+    ["Check out/Edit"    p4-edit
+     (and (p4-buffer-file-name-2) (or (not p4-mode) buffer-read-only))]
+    ["Re-open"	       p4-reopen
+     (and (p4-buffer-file-name-2) (or (not p4-mode) (not buffer-read-only)))]
+    ["Revert File"  p4-revert
+     (and (p4-buffer-file-name-2) (or (not p4-mode) (not buffer-read-only)))]
+    ["Delete File from Depot"  p4-delete
+     (and (p4-buffer-file-name-2) (or (not p4-mode) buffer-read-only))]
+    ["Rename Depot File" p4-rename
+     (and (p4-buffer-file-name-2) (or (not p4-mode) buffer-read-only))]
+    ["Submit Changes"  p4-submit t]
+    ["--" nil nil]
+    ["Sync/Get Files from Depot" p4-get t]
+    ["--" nil nil]
+    ["Show Opened Files"	p4-opened t]
+    ["Filelog" p4-filelog (p4-buffer-file-name-2)]
+    ["Changes" p4-changes t]
+    ["Describe Change" p4-describe t]
+    ["--" nil nil]
+    ["Diff 2 Versions" p4-diff2 (p4-buffer-file-name-2)]
+    ["Diff Current" p4-diff t]
+    ["Diff All Opened Files" p4-diff-all-opened t]
+    ["Diff Current with Ediff"   p4-ediff
+     (and (p4-buffer-file-name) (not buffer-read-only) p4-mode)]
+    ["Diff 2 Versions with Ediff"   p4-ediff2 (p4-buffer-file-name-2)]
+    ["--" nil nil]
+    ["Schedule Integrations" p4-integ t]
+    ["Resolve Conflicts" p4-resolve t]
+    ["--" nil nil]
+    ["Print" p4-print (p4-buffer-file-name-2)]
+    ["Print with Revision History" p4-blame
+     (p4-buffer-file-name-2)]
+    ["Find File using Depot Spec" p4-depot-find-file
+     p4-do-find-file]
+    ["--" nil nil]
+    ["Edit a Branch Specification" p4-branch t]
+    ["Edit a Label Specification" p4-label t]
+    ["Edit a Client Specification" p4-client t]
+    ["Edit a User Specification" p4-user t]
+    ["--" nil nil]
+    ["Show Version" p4-emacs-version t]
+    ["Disable P4 VC Check"  p4-toggle-vc-mode-off
+     p4-do-find-file]
+    ["Enable P4 VC Check"	 p4-toggle-vc-mode-on
+     (not p4-do-find-file)]
+    ["--" nil nil]
+    ["Set P4 Config"  p4-set-client-config p4-do-find-file]
+    ["Get Current P4 Config"  p4-get-client-config
+     p4-do-find-file]
+    ["--" nil nil]
+    ["Set P4 Client"  p4-set-client-name p4-do-find-file]
+    ["Get Current P4 Client"  p4-get-client-name
+     p4-do-find-file]
+    ["--" nil nil]
+    ["Set P4 Server/Port"	 p4-set-p4-port p4-do-find-file]
+    ["Get Current P4 Server/Port"	 p4-get-p4-port
+     p4-do-find-file]
+    ["--" nil nil]
+    ["Set P4 Notification List"  p4-set-notify-list
+     p4-mode]
+    ["Get P4 Notification List"  p4-get-notify-list p4-notify]
+    )
+  "The P4 menu definition")
 
-  (cond (p4-running-xemacs
-	 ;; Menu Support for XEmacs
-	 (require 'easymenu)
-	 (defun p4-mode-menu (modestr)
-	   (cons modestr p4-menu-def)))
+(defun p4-mode-menu (modestr)
+  (cons modestr p4-menu-spec))
 
-	(p4-running-emacs
-	 ;; Menu support for Emacs
-	 (or (lookup-key global-map [menu-bar])
-	     (define-key global-map [menu-bar] (make-sparse-keymap "menu-bar")))
-	 (defvar menu-bar-p4-menu (make-sparse-keymap "P4"))
-	 (setq menu-bar-final-items (cons 'p4-menu menu-bar-final-items))
-	 (define-key global-map [menu-bar p4-menu]
-	   (cons "P4" menu-bar-p4-menu))
-	 (let ((m (reverse p4-menu-def))
-	       (separator-number 0))
-	   (while m
-	     (let ((menu-text (elt (car m) 0))
-		   (menu-action (elt (car m) 1))
-		   (menu-pred (elt (car m) 2)))
-	       (if menu-action
-		   (progn
-		     (define-key menu-bar-p4-menu (vector menu-action)
-		       (cons menu-text menu-action))
-		     (put menu-action 'menu-enable menu-pred))
-		 (define-key menu-bar-p4-menu
-		   (vector (make-symbol
-			    (concat "separator-"
-				    (int-to-string separator-number))))
-		   '("--"))
-		 (setq separator-number (1+ separator-number))))
-	     (setq m (cdr m))))))
+(easy-menu-add-item nil '("tools")
+		    (easy-menu-create-menu "P4" p4-menu-spec)
+		    "PCL-CVS")
 
   (defun p4-depot-output (command &optional args)
     "Executes p4 command inside a buffer.
