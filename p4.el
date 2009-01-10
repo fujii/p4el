@@ -437,12 +437,8 @@ arguments to p4 commands."
 	indent-tabs-mode t))
 
 (defun p4-make-derived-map (base-map)
-  (let (map)
-    (cond (p4-running-xemacs
-	   (setq map (make-sparse-keymap))
-	   (set-keymap-parents map (list base-map)))
-	  (p4-running-emacs
-	   (setq map (cons 'keymap base-map))))
+  (let ((map (make-sparse-keymap)))
+    (set-keymap-parent map base-map)
     map))
 
 (defvar p4-filelog-map
