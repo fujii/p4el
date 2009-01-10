@@ -1095,60 +1095,59 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
   (let ((p4-filelog-buffer
 	 (concat "*P4 " cmd ": "
 		 (p4-list-to-string file-list-spec) "*")))
-    (p4-noinput-buffer-action cmd nil t (cons "-l" file-list-spec))
-    (p4-activate-file-change-log-buffer p4-filelog-buffer)))
+    (p4-async-command cmd (cons "-l" file-list-spec) p4-filelog-buffer
+		      (lambda ()
+			(p4-activate-file-change-log-buffer (current-buffer))))))
 
-(defun p4-activate-file-change-log-buffer (bufname)
-  (let (p4-cur-rev p4-cur-change p4-cur-action
-	p4-cur-user p4-cur-client)
-    (p4-activate-print-buffer bufname nil)
-    (set-buffer bufname)
-    (setq buffer-read-only nil)
-    (goto-char (point-min))
-    (while (re-search-forward (concat
-			       "^\\(\\.\\.\\. #\\([0-9]+\\) \\)?[Cc]hange "
-			       "\\([0-9]+\\) \\([a-z]+\\)?.*on.*by "
-			       "\\([^ @]+\\)@\\([^ \n]+\\).*\n"
-			       "\\(\\(\\([ \t].*\\)?\n\\)*\\)") nil t)
-      (let ((rev-match 2)
-	    (ch-match 3)
-	    (act-match 4)
-	    (user-match 5)
-	    (cl-match 6)
-	    (desc-match 7))
-	(setq p4-cur-rev (match-string rev-match))
-	(setq p4-cur-change (match-string ch-match))
-	(setq p4-cur-action (match-string act-match))
-	(setq p4-cur-user (match-string user-match))
-	(setq p4-cur-client (match-string cl-match))
+(defun p4-activate-file-change-log-buffer (buffer)
+  (with-current-buffer buffer
+    (let (p4-cur-rev p4-cur-change p4-cur-action
+		     p4-cur-user p4-cur-client)
+      (p4-mark-print-buffer buffer nil)
+      (goto-char (point-min))
+      (while (re-search-forward (concat
+				 "^\\(\\.\\.\\. #\\([0-9]+\\) \\)?[Cc]hange "
+				 "\\([0-9]+\\) \\([a-z]+\\)?.*on.*by "
+				 "\\([^ @]+\\)@\\([^ \n]+\\).*\n"
+				 "\\(\\(\\([ \t].*\\)?\n\\)*\\)") nil t)
+	(let ((rev-match 2)
+	      (ch-match 3)
+	      (act-match 4)
+	      (user-match 5)
+	      (cl-match 6)
+	      (desc-match 7))
+	  (setq p4-cur-rev (match-string rev-match))
+	  (setq p4-cur-change (match-string ch-match))
+	  (setq p4-cur-action (match-string act-match))
+	  (setq p4-cur-user (match-string user-match))
+	  (setq p4-cur-client (match-string cl-match))
 
-	(if (match-beginning rev-match)
-	    (p4-create-active-link (match-beginning rev-match)
-				   (match-end rev-match)
-				   (list (cons 'rev p4-cur-rev))))
-	(p4-create-active-link (match-beginning ch-match)
-			       (match-end ch-match)
-			       (list (cons 'change p4-cur-change)))
-	(if (match-beginning act-match)
-	    (p4-create-active-link (match-beginning act-match)
-				   (match-end act-match)
-				   (list (cons 'action p4-cur-action)
-					 (cons 'rev p4-cur-rev))))
-	(p4-create-active-link (match-beginning user-match)
-			       (match-end user-match)
-			       (list (cons 'user p4-cur-user)))
-	(p4-create-active-link (match-beginning cl-match)
-			       (match-end cl-match)
-			       (list (cons 'client p4-cur-client)))
-	(p4-set-extent-properties (match-beginning desc-match)
-				  (match-end desc-match)
-				  (list (cons 'invisible t)
-					(cons 'isearch-open-invisible t)))))
-    (p4-find-change-numbers bufname (point-min) (point-max))
-    (use-local-map p4-filelog-map)
-    (setq buffer-invisibility-spec (list))
-    (setq buffer-read-only t)
-    (p4-move-buffer-point-to-top bufname)))
+	  (if (match-beginning rev-match)
+	      (p4-create-active-link (match-beginning rev-match)
+				     (match-end rev-match)
+				     (list (cons 'rev p4-cur-rev))))
+	  (p4-create-active-link (match-beginning ch-match)
+				 (match-end ch-match)
+				 (list (cons 'change p4-cur-change)))
+	  (if (match-beginning act-match)
+	      (p4-create-active-link (match-beginning act-match)
+				     (match-end act-match)
+				     (list (cons 'action p4-cur-action)
+					   (cons 'rev p4-cur-rev))))
+	  (p4-create-active-link (match-beginning user-match)
+				 (match-end user-match)
+				 (list (cons 'user p4-cur-user)))
+	  (p4-create-active-link (match-beginning cl-match)
+				 (match-end cl-match)
+				 (list (cons 'client p4-cur-client)))
+	  (p4-set-extent-properties (match-beginning desc-match)
+				    (match-end desc-match)
+				    (list (cons 'invisible t)
+					  (cons 'isearch-open-invisible t)))))
+      (p4-find-change-numbers buffer (point-min) (point-max))
+      (use-local-map p4-filelog-map)
+      (setq buffer-invisibility-spec (list))
+      (p4-move-buffer-point-to-top buffer))))
 
 ;; Scan specified region for references to change numbers
 ;; and make the change numbers clickable.
@@ -1407,41 +1406,42 @@ the corresponding client file."
       (goto-char (point-min))
       (p4-insert-no-properties first-line))))
 
+(defun p4-mark-print-buffer (buffer print-buffer)
+  (with-current-buffer buffer
+    (let ((depot-regexp
+	   (if print-buffer
+	       "^\\(//[^/@# ][^/@#]*/\\)[^@#]+#[0-9]+ - "
+	     "^\\(//[^/@# ][^/@#]*/\\)")))
+      (save-excursion
+	(goto-char (point-min))
+	(while (re-search-forward depot-regexp nil t)
+	  (let ((link-client-name (get-char-property (match-end 1)
+						     'link-client-name))
+		(link-depot-name (get-char-property (match-end 1)
+						    'link-depot-name))
+		(start (match-beginning 1))
+		(end (point-max)))
+	    (save-excursion
+	      (if (re-search-forward depot-regexp nil t)
+		  (setq end (match-beginning 1))))
+	    (if link-client-name
+		(p4-set-extent-properties start end
+					  (list (cons 'block-client-name
+						      link-client-name))))
+	    (if link-depot-name
+		(p4-set-extent-properties start end
+					  (list (cons 'block-depot-name
+						      link-depot-name))))
+	    (p4-find-change-numbers buffer start
+				    (save-excursion
+				      (goto-char start)
+				      (line-end-position)))))))))
+
 (defun p4-activate-print-buffer (buffer-name print-buffer)
   (if print-buffer
       (p4-font-lock-buffer p4-output-buffer-name))
   (p4-make-depot-list-buffer buffer-name print-buffer)
-  (let ((depot-regexp
-	 (if print-buffer
-	     "^\\(//[^/@# ][^/@#]*/\\)[^@#]+#[0-9]+ - "
-	   "^\\(//[^/@# ][^/@#]*/\\)")))
-    (save-excursion
-      (set-buffer buffer-name)
-      (setq buffer-read-only nil)
-      (goto-char (point-min))
-      (while (re-search-forward depot-regexp nil t)
-	(let ((link-client-name (get-char-property (match-end 1)
-						   'link-client-name))
-	      (link-depot-name (get-char-property (match-end 1)
-						  'link-depot-name))
-	      (start (match-beginning 1))
-	      (end (point-max)))
-	  (save-excursion
-	    (if (re-search-forward depot-regexp nil t)
-		(setq end (match-beginning 1))))
-	  (if link-client-name
-	      (p4-set-extent-properties start end
-					(list (cons 'block-client-name
-						    link-client-name))))
-	  (if link-depot-name
-	      (p4-set-extent-properties start end
-					(list (cons 'block-depot-name
-						    link-depot-name))))
-	  (p4-find-change-numbers buffer-name start
-				  (save-excursion
-				    (goto-char start)
-				    (line-end-position)))))
-      (setq buffer-read-only t))))
+  (p4-mark-print-buffer buffer-name print-buffer))
 
 (defconst p4-blame-change-regex
   (concat "^\\.\\.\\. #"     "\\([0-9]+\\)"   ;; revision
