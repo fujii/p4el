@@ -256,6 +256,67 @@ within emacs."
   :type 'boolean
   :group 'p4)
 
+(defface p4-diff-file-face
+	    '((((class color) (background light)) (:background "gray90"))
+	      (((class color) (background dark)) (:background "gray10")))
+	    "Face used for file pathnames in difference buffers."
+	    :group 'p4-faces)
+
+(defface p4-diff-head-face
+	    '((((class color) (background light)) (:background "gray95"))
+	      (((class color) (background dark)) (:background "gray5")))
+	    "Face used for ?"
+	    :group 'p4-faces)
+
+(defface p4-diff-inserted-face
+	    '((((class color) (background light)) (:foreground "blue"))
+	      (((class color) (background dark)) (:foreground "cyan")))
+	    "Face used for new (inserted) text in difference buffers.
+When the newer revision contains text not in the older revision, that text will
+be marked with this face."
+	    :group 'p4-faces)
+
+(defface p4-diff-deleted-face
+	    '((((class color) (background light)) (:foreground "red"))
+	      (((class color) (background dark)) (:foreground "pink")))
+	    "Face used for old (deleted) text in difference buffers.
+When the older revision contains text not in the newer revision, that text will
+be marked with this face."
+	    :group 'p4-faces)
+
+(defface p4-diff-changed-face
+	    '((((class color) (background light)) (:foreground "dark green"))
+	      (((class color) (background dark)) (:foreground "light green")))
+	    "Face used for changed text in difference buffers.
+When a section of text is in both the newer and older revision, but differs
+between them, that text will be marked with this face."
+	    :group 'p4-faces)
+
+(defface p4-depot-branched-face
+	    '((((class color) (background light)) (:foreground "blue4"))
+	      (((class color) (background dark)) (:foreground "cyan1")))
+	    "Face used for branched files."
+	    :group 'p4-faces)
+
+(defface p4-depot-added-face
+	    '((((class color) (background light)) (:foreground "blue"))
+	      (((class color) (background dark)) (:foreground "cyan")))
+	    "Face used for files added to the depot."
+	    :group 'p4-faces)
+
+(defface p4-depot-deleted-face
+	    '((((class color) (background light)) (:foreground "red"))
+	      (((class color) (background dark)) (:foreground "pink")))
+	    "Face used for files deleted from the depot."
+	    :group 'p4-faces)
+
+(defface p4-depot-unmapped-face
+	    '((((class color) (background light)) (:foreground "grey30"))
+	      (((class color) (background dark)) (:foreground "grey70")))
+	    "Face used for files not mapped to the depot."
+	    :group 'p4-faces)
+
+
 ;; Now add a hook to find-file-hooks
 (add-hook 'find-file-hooks 'p4-find-file-hook)
 ;; .. and one to kill-buffer-hook
@@ -1252,22 +1313,6 @@ name and a client name."
       (delete-region pmin (point-max)))
     files))
 
-(defun p4-make-face (face-name fg bg)
-  "Creates a new face if it does not already exist."
-  (let ((face (facep face-name)))
-    (cond
-     ((null face)
-      (make-face face-name)
-      (if (not (null bg))
-	  (set-face-background face-name bg) t)
-      (if (not (null fg))
-	  (set-face-foreground face-name fg) t)))))
-
-(p4-make-face 'p4-depot-unmapped-face "grey30" nil)
-(p4-make-face 'p4-depot-deleted-face "red" nil)
-(p4-make-face 'p4-depot-added-face "blue" nil)
-(p4-make-face 'p4-depot-branch-op-face "blue4" nil)
-
 (defun p4-make-depot-list-buffer (bufname &optional print-buffer)
   "Take the p4-output-buffer-name buffer, rename it to bufname, and
 make all depot file names active, so that clicking them opens
@@ -1307,7 +1352,7 @@ the corresponding client file."
 	    (setq prop-list (append (list
 				     (cons 'history-for p4-depot-file)
 				     (cons 'face
-					   'p4-depot-branch-op-face))
+					   'p4-depot-branched-face))
 				    prop-list)))
 	(cond
 	 ((not p4-client-file)
@@ -2151,13 +2196,6 @@ character events"
     (move-to-column c)))
 
 
-;; Activate special handling for a buffer generated with a diff-like command
-(p4-make-face 'p4-diff-file-face nil "gray90")
-(p4-make-face 'p4-diff-head-face nil "gray95")
-(p4-make-face 'p4-diff-ins-face "blue" nil)
-(p4-make-face 'p4-diff-del-face "red" nil)
-(p4-make-face 'p4-diff-change-face "dark green" nil)
-
 (defun p4-buffer-set-face-property (regexp face-property)
   (save-excursion
     (goto-char (point-min))
@@ -2176,8 +2214,8 @@ character events"
 	(progn
 	  (p4-buffer-set-face-property "^=.*\n" 'p4-diff-file-face)
 	  (p4-buffer-set-face-property "^[@*].*" 'p4-diff-head-face)
-	  (p4-buffer-set-face-property "^\\([+>].*\n\\)+" 'p4-diff-ins-face)
-	  (p4-buffer-set-face-property "^\\([-<].*\n\\)+" 'p4-diff-del-face)
+	  (p4-buffer-set-face-property "^\\([+>].*\n\\)+" 'p4-diff-inserted-face)
+	  (p4-buffer-set-face-property "^\\([-<].*\n\\)+" 'p4-diff-delleted-face)
 	  (p4-buffer-set-face-property "^\\(!.*\n\\)+" 'p4-diff-change-face)))
 
     (goto-char (point-min))
