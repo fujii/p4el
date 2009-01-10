@@ -641,8 +641,6 @@ the last popped element to restore the window configuration."
       ["Set P4 Notification List"  p4-set-notify-list
        p4-mode]
       ["Get P4 Notification List"  p4-get-notify-list p4-notify]
-      ["--" nil nil]
-      ["Describe Key Bindings"  p4-describe-bindings t]
       )
     "The P4 menu definition")
 
@@ -2813,7 +2811,6 @@ the current value of P4PORT."
     (define-key map "X" 'p4-fix)
     (define-key map "=" 'p4-diff)
     (define-key map "-" 'p4-ediff)
-    (define-key map "?" 'p4-describe-bindings)
     map)
   "The Prefix for P4 Library Commands.")
 
@@ -3147,29 +3144,6 @@ making the file writable and write protected."
 	      (setq mode (logand mode (lognot 128)))
 	    (setq mode (logior mode 128)))
 	  (set-file-modes buffer-file-name mode))))))
-
-(defun p4-describe-bindings ()
-  "A function to list the key bindings for the p4 prefix map"
-  (interactive)
-  (save-excursion
-    (p4-push-window-config)
-    (let ((map (make-sparse-keymap))
-	  (p4-bindings-buffer "*P4 key bindings*"))
-      (get-buffer-create p4-bindings-buffer)
-      (cond
-       (p4-running-xemacs
-	(set-buffer p4-bindings-buffer)
-	(delete-region (point-min) (point-max))
-	(insert "Key Bindings for P4 Mode\n------------------------\n")
-	(describe-bindings-internal p4-prefix-map))
-       (p4-running-emacs
-	(kill-buffer p4-bindings-buffer)
-	(describe-bindings "\C-xp")
-	(set-buffer "*Help*")
-	(rename-buffer p4-bindings-buffer)))
-      (define-key map "q" 'p4-quit-current-buffer)
-      (use-local-map map)
-      (display-buffer p4-bindings-buffer))))
 
 ;; Break up a string into a list of words
 ;; (p4-make-list-from-string "ab c de  f") -> ("ab" "c" "de" "f")
