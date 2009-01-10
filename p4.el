@@ -83,19 +83,6 @@
       (require 'timer)
       (require 'dired)))
 
-;; For flavors of Emacs which don't define `defgroup' and `defcustom'.
-(eval-when-compile
-  (if (not (fboundp 'defgroup))
-      (defmacro defgroup (sym memb doc &rest args)
-	"Null macro for defgroup in all versions of Emacs that don't define
-defgroup"
-	t))
-  (if (not (fboundp 'defcustom))
-      (defmacro defcustom (sym val doc &rest args)
-	"Macro to alias defcustom to defvar in all versions of Emacs that
-don't define defcustom"
-	`(defvar ,sym ,val ,doc))))
-
 (defgroup p4 nil "Perforce VC System." :group 'tools)
 
 ;; This can be set to wherever 'p4' lies using p4-set-p4-executable
