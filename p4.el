@@ -2049,6 +2049,7 @@ character events"
 					  (concat
 					   "*P4 User: " user "*")
 					  "user" (list user)))
+	  (group (p4-group group))
 	  (client (p4-async-process-command
 		   "client" "Description:\n\t"
 		   (concat "*P4 Client: " client "*") "client" (list client)))
