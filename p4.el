@@ -2604,40 +2604,31 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
 				    submit-buf-name "submit" args)))))
 
 ;; The p4 user command
-(defp4cmd p4-user ()
+(defp4cmd p4-user (&rest args)
   "user" "To create or edit a user specification, type \\[p4-user].\n"
-  (interactive)
-  (let (args)
-    (if current-prefix-arg
-	(setq args (p4-make-list-from-string
-		    (p4-read-arg-string "p4 user: " nil "user"))))
-    (if (p4-cmd-line-flags args)
-	(p4-noinput-buffer-action "user" nil t args)
-      (p4-async-process-command "user" nil nil nil args))))
+  (interactive (p4-make-list-from-string
+		(p4-read-arg-string "p4 user: " nil "user")))
+  (if (p4-cmd-line-flags args)
+      (p4-noinput-buffer-action "user" nil t args)
+    (p4-async-process-command "user" nil nil nil args)))
 
 ;; The p4 group command
-(defp4cmd p4-group ()
+(defp4cmd p4-group (&rest args)
   "group" "To create or edit a group specification, type \\[p4-group].\n"
-  (interactive)
-  (let (args)
-    (if current-prefix-arg
-	(setq args (p4-make-list-from-string
-		    (p4-read-arg-string "p4 group: " nil "group"))))
-    (if (p4-cmd-line-flags args)
-	(p4-noinput-buffer-action "group" nil t args)
-      (p4-async-process-command "group" nil nil nil args))))
+  (interactive (p4-make-list-from-string
+		(p4-read-arg-string "p4 group: " nil "group")))
+  (if (p4-cmd-line-flags args)
+      (p4-noinput-buffer-action "group" nil t args)
+    (p4-async-process-command "group" nil nil nil args)))
 
 ;; The p4 job command
-(defp4cmd p4-job ()
+(defp4cmd p4-job (&rest args)
   "job" "To create or edit a job, type \\[p4-job].\n"
-  (interactive)
-  (let (args)
-    (if current-prefix-arg
-	(setq args (p4-make-list-from-string
-		    (p4-read-arg-string "p4 job: " nil "job"))))
-    (if (p4-cmd-line-flags args)
-	(p4-noinput-buffer-action "job" nil t args)
-      (p4-async-process-command "job" "Description:\n\t" nil nil args))))
+  (interactive (p4-make-list-from-string
+		(p4-read-arg-string "p4 job: " nil "job")))
+  (if (p4-cmd-line-flags args)
+      (p4-noinput-buffer-action "job" nil t args)
+    (p4-async-process-command "job" "Description:\n\t" nil nil args)))
 
 ;; The p4 jobspec command
 (defp4cmd p4-jobspec ()
