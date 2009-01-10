@@ -526,9 +526,6 @@ Does auto re-highlight management (whatever that is)."
 	      (p4-login)
 	      (p4-exec-p4 output-buffer args clear-output-buffer t))
 	  (p4-menu-add)
-	  (if (and p4-running-emacs
-		   (boundp 'hilit-auto-rehighlight))
-	      (setq hilit-auto-rehighlight nil))
 	  result))))
   (defun p4-call-p4-here (&rest args)
     "Internal function called by various p4 commands.
@@ -1430,9 +1427,6 @@ the corresponding client file."
 	  (font-lock-fontify-buffer)
 	(error nil))
       (fundamental-mode)
-      (if (and p4-running-emacs
-	       (boundp 'hilit-auto-rehighlight))
-	  (setq hilit-auto-rehighlight nil))
       (setq buffer-read-only nil)
       (goto-char (point-min))
       (p4-insert-no-properties first-line))))
