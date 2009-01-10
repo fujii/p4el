@@ -1704,11 +1704,7 @@ This is equivalent to \"sync -f\"
      (concat "*P4 Refresh: (" (p4-current-client) ") " (car args) "*"))))
 
 ;; The p4 get/sync command
-(defp4cmd p4-sync ()
-  "sync"
-  "To synchronise the local view with the depot, type \\[p4-get].\n"
-  (interactive)
-  (p4-get))
+(defalias 'p4-sync 'p4-get)
 
 (defp4cmd p4-get ()
   "sync"
