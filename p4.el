@@ -761,6 +761,18 @@ controlled files."
   (if (and do-revert (p4-buffer-file-name))
       (revert-buffer t t)))
 
+(defun p4-call-command (cmd args buffer-name &optional mode callback)
+  (let ((inhibit-read-only t)
+	(buffer (p4-make-output-buffer buffer-name mode)))
+    (p4-exec-p4 buffer (cons cmd args))
+    (with-current-buffer buffer
+      (goto-char (point-min))
+      (when callback
+	(funcall callback))
+      (set-buffer-modified-p nil))
+    (p4-push-window-config)
+    (display-buffer buffer)))
+
 (defun p4-async-command-process-sentinel (callback process message)
   (let ((inhibit-read-only t)
 	(buffer (process-buffer process)))
@@ -1739,28 +1751,13 @@ Argument ARG command for which help is needed.
   (interactive (list (p4-make-list-from-string
 		      (p4-read-arg-string "Help on which command: "
 					  nil "help"))))
-  (p4-noinput-buffer-action "help" nil t arg)
-  (p4-make-basic-buffer "*P4 help*"))
-
-(defun p4-make-basic-buffer (buf-name &optional map)
-  "rename `p4-output-buffer-name' to buf-name \(which will be killed first if
-it already exists\), set its local map to map, if specified, or
-`p4-basic-mode-map' otherwise. Makes the buffer read only."
-  (get-buffer-create buf-name)
-  (kill-buffer buf-name)
-  (set-buffer p4-output-buffer-name)
-  (goto-char (point-min))
-  (rename-buffer buf-name t)
-  (use-local-map (if (keymapp map) map p4-basic-mode-map))
-  (setq buffer-read-only t)
-  (p4-move-buffer-point-to-top buf-name))
+  (p4-call-command "help" arg "*P4 help*"))
 
 ;; The p4 info command
 (defp4cmd p4-info ()
   "info" "To print out client/server information, type \\[p4-info].\n"
   (interactive)
-  (p4-noinput-buffer-action "info" nil t)
-  (p4-make-basic-buffer "*P4 info*"))
+  (p4-call-command "info" nil "*P4 info*"))
 
 ;; The p4 integrate command
 (defp4cmd p4-integ ()
@@ -2301,9 +2298,9 @@ character events"
     (if current-prefix-arg
 	(setq args (p4-make-list-from-string
 		    (p4-read-arg-string "p4 users: " nil "user"))))
-    (p4-noinput-buffer-action "users" nil t args))
-  (p4-make-basic-buffer "*P4 users*")
-  (p4-regexp-create-links "*P4 users*" "^\\([^ ]+\\).*\n" 'user))
+    (p4-call-command "users" args "*P4 users*" nil
+		     (lambda ()
+		       (p4-regexp-create-links "*P4 users*" "^\\([^ ]+\\).*\n" 'user)))))
 
 (defp4cmd p4-groups ()
   "groups" "To display list of known groups, type \\[p4-groups].\n"
@@ -2312,9 +2309,9 @@ character events"
     (if current-prefix-arg
 	(setq args (p4-make-list-from-string
 		    (p4-read-arg-string "p4 groups: " nil "group"))))
-    (p4-noinput-buffer-action "groups" nil t args))
-  (p4-make-basic-buffer "*P4 groups*")
-  (p4-regexp-create-links "*P4 groups*" "^\\(.*\\)\n" 'group))
+    (p4-call-command "groups" args "*P4 groups*" nil
+		     (lambda ()
+		       (p4-regexp-create-links "*P4 groups*" "^\\(.*\\)\n" 'group)))))
 
 ;; The p4 jobs command
 (defp4cmd p4-jobs ()
@@ -2323,8 +2320,7 @@ character events"
   (let (args)
     (if current-prefix-arg
 	(setq args (p4-make-list-from-string (p4-read-arg-string "p4 jobs: "))))
-    (p4-noinput-buffer-action "jobs" nil t args))
-  (p4-make-basic-buffer "*P4 jobs*"))
+    (p4-call-command "jobs" args "*P4 jobs*")))
 
 ;; The p4 fix command
 (defp4cmd p4-fix ()
@@ -2341,8 +2337,7 @@ character events"
   (let (args)
     (if current-prefix-arg
 	(setq args (p4-make-list-from-string (p4-read-arg-string "p4 fixes: "))))
-    (p4-noinput-buffer-action "fixes" nil t args)
-    (p4-make-basic-buffer "*P4 fixes*")))
+    (p4-call-command "fixes" args "*P4 fixes*")))
 
 ;; The p4 where command
 (defp4cmd p4-where ()
@@ -2487,9 +2482,9 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
 (defp4cmd p4-clients ()
   "clients" "To list all clients, type \\[p4-clients].\n"
   (interactive)
-  (p4-noinput-buffer-action "clients" nil t nil)
-  (p4-make-basic-buffer "*P4 clients*")
-  (p4-regexp-create-links "*P4 clients*" "^Client \\([^ ]+\\).*\n" 'client))
+  (p4-call-command "clients" nil "*P4 clients*" nil
+		   (lambda ()
+		     (p4-regexp-create-links "*P4 clients*" "^Client \\([^ ]+\\).*\n" 'client))))
 
 (defp4cmd p4-branch (args)
   "branch" "Edit a P4-BRANCH specification using \\[p4-branch]."
@@ -2508,9 +2503,9 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
 (defp4cmd p4-branches ()
   "branches" "To list all branches, type \\[p4-branches].\n"
   (interactive)
-  (p4-noinput-buffer-action "branches" nil t nil)
-  (p4-make-basic-buffer "*P4 branches*")
-  (p4-regexp-create-links "*P4 branches*" "^Branch \\([^ ]+\\).*\n" 'branch))
+  (p4-call-command "branches" nil "*P4 branches*" nil
+		   (lambda ()
+		     (p4-regexp-create-links "*P4 branches*" "^Branch \\([^ ]+\\).*\n" 'branch))))
 
 (defp4cmd p4-label (args)
   "label" "Edit a P4-label specification using \\[p4-label].\n"
@@ -2529,9 +2524,9 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
 (defp4cmd p4-labels ()
   "labels" "To display list of defined labels, type \\[p4-labels].\n"
   (interactive)
-  (p4-noinput-buffer-action "labels" nil t nil)
-  (p4-make-basic-buffer "*P4 labels*")
-  (p4-regexp-create-links "*P4 labels*" "^Label \\([^ ]+\\).*\n" 'label))
+  (p4-call-command "labels" nil "*P4 labels*" nil
+		   (lambda ()
+		     (p4-regexp-create-links "*P4 labels*" "^Label \\([^ ]+\\).*\n" 'label))))
 
 ;; The p4 labelsync command
 (defp4cmd p4-labelsync ()
