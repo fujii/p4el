@@ -2019,10 +2019,7 @@ character events"
 	  (change (p4-describe-internal
 		   (append (p4-make-list-from-string p4-default-diff-options)
 			   (list change))))
-	  (user (p4-form-command "user" nil
-					  (concat
-					   "*P4 User: " user "*")
-					  "user" (list user)))
+	  (user (p4-user user))
 	  (group (p4-group group))
 	  (client (p4-form-command
 		   "client" "Description:\n\t"
