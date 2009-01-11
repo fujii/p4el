@@ -1272,60 +1272,61 @@ name and a client name."
     files))
 
 (defun p4-mark-depot-list-buffer (&optional print-buffer)
-  (let (args files depot-regexp)
-    (goto-char (point-min))
-    (setq depot-regexp
-	  (if print-buffer
-	      "\\(^\\)\\(//[^/@# ][^/@#]*/[^@#]+\\)#[0-9]+ - "
-	    "^\\(\\.\\.\\. [^/\n]*\\|==== \\)?\\(//[^/@# ][^/@#]*/[^#\n]*\\)"))
-    (while (re-search-forward depot-regexp nil t)
-      (setq args (cons (match-string 2) args)))
-    (setq files (p4-map-depot-files args))
-    (goto-char (point-min))
-    (while (re-search-forward depot-regexp nil t)
-      (let ((p4-client-file (cdr (assoc (match-string 2) files)))
-	    (p4-depot-file (match-string 2))
-	    (start (match-beginning 2))
-	    (end (match-end 2))
-	    (branching-op-p (and (match-string 1)
-				 (string-match "\\.\\.\\. \\.\\.\\..*"
-					       (match-string 1))))
-	    prop-list)
-	(if (and p4-client-file
-		 (file-readable-p p4-client-file))
-	    (setq prop-list (list (cons 'link-client-name
-					p4-client-file)))
-	  (setq prop-list (list (cons 'link-depot-name
-				      p4-depot-file))))
-	;; some kind of operation related to branching/integration
-	(if branching-op-p
-	    (setq prop-list (append (list
-				     (cons 'history-for p4-depot-file)
-				     (cons 'face
-					   'p4-depot-branched-face))
-				    prop-list)))
-	(cond
-	 ((not p4-client-file)
-	  (p4-set-extent-properties
-	   start end
-	   (append (list (cons 'face 'p4-depot-unmapped-face))
-		   prop-list)))
-	 ((save-excursion
-	    (goto-char end)
-	    (looking-at ".* deleted?[ \n]"))
-	  (p4-set-extent-properties
-	   start end
-	   (append (list (cons 'face 'p4-depot-deleted-face))
-		   prop-list)))
-	 ((save-excursion
-	    (goto-char end)
-	    (looking-at ".* \\(add\\|branch\\)\\(ed\\)?[ \n]"))
-	  (p4-create-active-link
-	   start end
-	   (append (list (cons 'face 'p4-depot-added-face))
-		   prop-list)))
-	 (t
-	  (p4-create-active-link start end prop-list)))))))
+  (save-excursion
+    (let (args files depot-regexp)
+      (goto-char (point-min))
+      (setq depot-regexp
+	    (if print-buffer
+		"\\(^\\)\\(//[^/@# ][^/@#]*/[^@#]+\\)#[0-9]+ - "
+	      "^\\(\\.\\.\\. [^/\n]*\\|==== \\)?\\(//[^/@# ][^/@#]*/[^#\n]*\\)"))
+      (while (re-search-forward depot-regexp nil t)
+	(setq args (cons (match-string 2) args)))
+      (setq files (p4-map-depot-files args))
+      (goto-char (point-min))
+      (while (re-search-forward depot-regexp nil t)
+	(let ((p4-client-file (cdr (assoc (match-string 2) files)))
+	      (p4-depot-file (match-string 2))
+	      (start (match-beginning 2))
+	      (end (match-end 2))
+	      (branching-op-p (and (match-string 1)
+				   (string-match "\\.\\.\\. \\.\\.\\..*"
+						 (match-string 1))))
+	      prop-list)
+	  (if (and p4-client-file
+		   (file-readable-p p4-client-file))
+	      (setq prop-list (list (cons 'link-client-name
+					  p4-client-file)))
+	    (setq prop-list (list (cons 'link-depot-name
+					p4-depot-file))))
+	  ;; some kind of operation related to branching/integration
+	  (if branching-op-p
+	      (setq prop-list (append (list
+				       (cons 'history-for p4-depot-file)
+				       (cons 'face
+					     'p4-depot-branched-face))
+				      prop-list)))
+	  (cond
+	   ((not p4-client-file)
+	    (p4-set-extent-properties
+	     start end
+	     (append (list (cons 'face 'p4-depot-unmapped-face))
+		     prop-list)))
+	   ((save-excursion
+	      (goto-char end)
+	      (looking-at ".* deleted?[ \n]"))
+	    (p4-set-extent-properties
+	     start end
+	     (append (list (cons 'face 'p4-depot-deleted-face))
+		     prop-list)))
+	   ((save-excursion
+	      (goto-char end)
+	      (looking-at ".* \\(add\\|branch\\)\\(ed\\)?[ \n]"))
+	    (p4-create-active-link
+	     start end
+	     (append (list (cons 'face 'p4-depot-added-face))
+		     prop-list)))
+	   (t
+	    (p4-create-active-link start end prop-list))))))))
 
 ;; The p4 print command
 (defp4cmd p4-print ()
