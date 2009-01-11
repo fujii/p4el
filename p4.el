@@ -400,6 +400,9 @@ arguments to p4 commands."
 	  (p4-running-emacs
 	   (define-key map [mouse-2] 'p4-buffer-mouse-clicked)
 	   (define-key map [mouse-3] 'p4-buffer-mouse-clicked-3)))
+    (define-key map "\t" 'p4-forward-active-link)
+    (define-key map "\e\t" 'p4-backward-active-link)
+    (define-key map [(shift tab)] 'p4-backward-active-link)
     (define-key map "\C-m" 'p4-buffer-commands)
     (define-key map "q"	 'p4-quit-current-buffer)
     (define-key map "k"	 'p4-scroll-down-1-line)
@@ -1090,6 +1093,18 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
 			    (append (list (cons 'face 'bold)
 					  (cons 'mouse-face 'highlight))
 				    prop-list)))
+
+(defun p4-forward-active-link ()
+  (interactive)
+  (while (and (not (eobp))
+	      (goto-char (next-overlay-change (point)))
+	      (not (get-char-property (point) 'face)))))
+
+(defun p4-backward-active-link ()
+  (interactive)
+  (while (and (not (bobp))
+	      (goto-char (previous-overlay-change (point)))
+	      (not (get-char-property (point) 'face)))))
 
 (defun p4-move-buffer-point-to-top (buf-name)
   (if (get-buffer-window buf-name)
