@@ -1414,6 +1414,7 @@ name and a client name."
 
 (defun p4-mark-print-buffer (buffer print-buffer)
   (with-current-buffer buffer
+    (p4-mark-depot-list-buffer print-buffer)
     (let ((depot-regexp
 	   (if print-buffer
 	       "^\\(//[^/@# ][^/@#]*/\\)[^@#]+#[0-9]+ - "
