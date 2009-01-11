@@ -771,7 +771,7 @@ controlled files."
 	(funcall callback))
       (set-buffer-modified-p nil))
     (p4-push-window-config)
-    (display-buffer buffer)))
+    (pop-to-buffer buffer)))
 
 (defun p4-async-command-process-sentinel (callback process message)
   (let ((inhibit-read-only t)
