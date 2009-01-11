@@ -453,7 +453,7 @@ arguments to p4 commands."
 
 (define-derived-mode p4-filelog-mode p4-basic-mode "P4 File Log")
 
-(defvar p4-opened-map
+(defvar p4-opened-mode-map
   (let ((map (p4-make-derived-map p4-basic-mode-map)))
     (define-key map "n"	 'p4-next-depot-file)
     (define-key map "p"	 'p4-prev-depot-file)
@@ -461,7 +461,9 @@ arguments to p4 commands."
     map)
   "The key map to use for selecting opened files.")
 
-(defvar p4-diff-map
+(define-derived-mode p4-opened-mode p4-basic-mode "P4 Opened")
+
+(defvar p4-diff-mode-map
   (let ((map (p4-make-derived-map p4-basic-mode-map)))
     (define-key map "n"	 'p4-goto-next-diff)
     (define-key map "p"	 'p4-goto-prev-diff)
@@ -470,7 +472,9 @@ arguments to p4 commands."
     (define-key map "u"	 'p4-prev-depot-diff)
     map))
 
-(defvar p4-print-rev-map
+(define-derived-mode p4-diff-mode p4-basic-mode "P4 Diff")
+
+(defvar p4-print-rev-mode-map
   (let ((map (p4-make-derived-map p4-basic-mode-map)))
     (define-key map "n"	 'p4-next-change-rev-line)
     (define-key map "p"	 'p4-prev-change-rev-line)
@@ -478,6 +482,8 @@ arguments to p4 commands."
     (define-key map "l"	 'p4-toggle-line-wrap)
     map)
   "The key map to use for browsing print-revs buffers.")
+
+(define-derived-mode p4-print-rev-mode p4-basic-mode "P4 Print Rev")
 
 ;;; All functions start here.
 
@@ -1361,7 +1367,7 @@ the corresponding client file."
   (set-buffer p4-output-buffer-name)
   (rename-buffer bufname t)
   (p4-mark-depot-list-buffer print-buffer)
-  (use-local-map p4-opened-map)
+  (use-local-map p4-opened-mode-map)
   (setq buffer-read-only t)
   (p4-move-buffer-point-to-top bufname))
 
@@ -1685,7 +1691,7 @@ type \\[p4-blame]"
       (save-excursion
 	(set-buffer buffer-name)
 	(setq truncate-lines t)
-	(use-local-map p4-print-rev-map)))))
+	(use-local-map p4-print-rev-mode-map)))))
 
 ;; The p4 refresh command
 (defp4cmd p4-refresh ()
@@ -2230,7 +2236,7 @@ character events"
 				 (match-end cl-match)
 				 (list (cons 'client cur-client)))))
 
-    (use-local-map p4-diff-map)
+    (use-local-map p4-diff-mode-map)
     (setq buffer-read-only t)))
 
 
