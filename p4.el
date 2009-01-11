@@ -400,8 +400,7 @@ arguments to p4 commands."
 	  (p4-running-emacs
 	   (define-key map [mouse-2] 'p4-buffer-mouse-clicked)
 	   (define-key map [mouse-3] 'p4-buffer-mouse-clicked-3)))
-    (define-key map [return] 'p4-buffer-commands)
-    (define-key map "\r" 'p4-buffer-commands)
+    (define-key map "\C-m" 'p4-buffer-commands)
     (define-key map "q"	 'p4-quit-current-buffer)
     (define-key map "k"	 'p4-scroll-down-1-line)
     (define-key map "j"	 'p4-scroll-up-1-line)
