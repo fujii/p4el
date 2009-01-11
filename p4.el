@@ -1327,20 +1327,6 @@ name and a client name."
 	 (t
 	  (p4-create-active-link start end prop-list)))))))
 
-(defun p4-make-depot-list-buffer (bufname &optional print-buffer)
-  "Take the p4-output-buffer-name buffer, rename it to bufname, and
-make all depot file names active, so that clicking them opens
-the corresponding client file."
-  (set-buffer p4-output-buffer-name)
-  (get-buffer-create bufname) ;; We do these two lines
-  (kill-buffer bufname)	      ;; to ensure no duplicates
-  (set-buffer p4-output-buffer-name)
-  (rename-buffer bufname t)
-  (p4-mark-depot-list-buffer print-buffer)
-  (use-local-map p4-opened-mode-map)
-  (setq buffer-read-only t)
-  (p4-move-buffer-point-to-top bufname))
-
 ;; The p4 print command
 (defp4cmd p4-print ()
   "print" "To print a depot file to a buffer, type \\[p4-print].\n"
@@ -1425,7 +1411,14 @@ the corresponding client file."
 (defun p4-activate-print-buffer (buffer-name print-buffer)
   (if print-buffer
       (p4-font-lock-buffer p4-output-buffer-name))
-  (p4-make-depot-list-buffer buffer-name print-buffer)
+  (set-buffer p4-output-buffer-name)
+  (get-buffer-create buffer-name) ;; We do these two lines
+  (kill-buffer buffer-name)	  ;; to ensure no duplicates
+  (set-buffer p4-output-buffer-name)
+  (rename-buffer buffer-name t)
+  (p4-mark-depot-list-buffer print-buffer)
+  (setq buffer-read-only t)
+  (p4-move-buffer-point-to-top buffer-name)
   (p4-mark-print-buffer buffer-name print-buffer))
 
 (defconst p4-blame-change-regex
