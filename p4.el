@@ -2010,17 +2010,9 @@ character events"
 	     (p4-noinput-buffer-action "print" nil t (list fn1))
 	     (p4-activate-print-buffer "*P4 print*" t)))
 	  (action
-	   (let* ((rev2 (int-to-string (1- (string-to-number rev))))
-		  (fn1 (concat filename "#" rev))
-		  (fn2 (concat filename "#" rev2)))
+	   (let ((rev2 (int-to-string (1- (string-to-number rev)))))
 	     (if (> (string-to-number rev2) 0)
-		 (progn
-		   (p4-noinput-buffer-action
-		    "diff2" nil t
-		    (append (p4-make-list-from-string
-			     p4-default-diff-options)
-			    (list fn2 fn1)))
-		   (p4-activate-diff-buffer "*P4 diff*"))
+		 (p4-diff2 (concat "#" rev) (concat "#" rev2))
 	       (error "There is no earlier revision to diff."))))
 	  (change (p4-describe-internal
 		   (append (p4-make-list-from-string p4-default-diff-options)
