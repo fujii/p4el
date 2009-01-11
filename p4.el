@@ -1706,9 +1706,10 @@ This is equivalent to \"sync -f\"
     (if current-prefix-arg
 	(setq args (p4-make-list-from-string
 		    (p4-read-arg-string "p4 have: " (p4-buffer-file-name-2)))))
-    (p4-noinput-buffer-action "have" nil t args)
-    (p4-make-depot-list-buffer
-     (concat "*P4 Have: (" (p4-current-client) ") " (car args) "*"))))
+    (p4-call-command "have" args (concat "*P4 Have: (" (p4-current-client) ") " (car args) "*")
+		     'p4-opened-mode
+		     (lambda ()
+		       (p4-mark-depot-list-buffer)))))
 
 ;; The p4 changes command
 (defp4cmd p4-changes ()
