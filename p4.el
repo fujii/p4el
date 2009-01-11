@@ -1677,10 +1677,11 @@ This is equivalent to \"sync -f\"
 	(setq args (p4-make-list-from-string
 		    (p4-read-arg-string "p4 refresh: ")))
       (setq args (list args)))
-    (p4-noinput-buffer-action "refresh" nil t args)
-    (p4-refresh-files-in-buffers)
-    (p4-make-depot-list-buffer
-     (concat "*P4 Refresh: (" (p4-current-client) ") " (car args) "*"))))
+    (p4-call-command "refresh" args (concat "*P4 Refresh: (" (p4-current-client) ") " (car args) "*")
+		     'p4-opened-mode
+		     (lambda ()
+		       (p4-refresh-files-in-buffers)
+		       (p4-mark-depot-list-buffer)))))
 
 ;; The p4 get/sync command
 (defalias 'p4-sync 'p4-get)
@@ -1744,8 +1745,9 @@ Argument ARG command for which help is needed.
   (interactive)
   (let ((args (p4-make-list-from-string
 	       (p4-read-arg-string "p4 integ: " "-b "))))
-    (p4-noinput-buffer-action "integ" nil t args)
-    (p4-make-depot-list-buffer "*P4 integ*")))
+    (p4-call-command "integ" args "*P4 integ*"
+		     'p4-opened-mode
+		     'p4-mark-depot-list-buffer)))
 
 (defp4cmd p4-resolve ()
   "resolve"
@@ -2235,8 +2237,9 @@ character events"
 
 (defun p4-opened-internal (args)
   (let ((p4-client (p4-current-client)))
-    (p4-noinput-buffer-action "opened" nil t args)
-    (p4-make-depot-list-buffer (concat "*Opened Files: " p4-client "*"))))
+    (p4-call-command "opened" args (concat "*Opened Files: " p4-client "*")
+		     'p4-opened-mode
+		     'p4-mark-depot-list-buffer)))
 
 (defun p4-update-opened-list ()
   (if (get-buffer-window (concat "*Opened Files: " (p4-current-client) "*"))
@@ -2498,8 +2501,9 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
   (interactive)
   (let ((args (p4-make-list-from-string
 	       (p4-read-arg-string "p4 labelsync: "))))
-    (p4-noinput-buffer-action "labelsync" nil t args))
-  (p4-make-depot-list-buffer "*P4 labelsync*"))
+    (p4-call-command "labelsync" args "*P4 labelsync*"
+		     'p4-opened-mode
+		     'p4-mark-depot-list-buffer)))
 
 (defun p4-filter-out (pred lst)
   (let (res)
