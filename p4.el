@@ -2469,7 +2469,7 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
     (if (p4-cmd-line-flags args)
 	(p4-noinput-buffer-action "client" nil t args)
       (p4-form-command "client" "\\(Description\\|View\\):\n\t"
-		       client-buf-name nil args)))))
+		       client-buf-name nil args))))
 
 (defp4cmd p4-clients ()
   "clients" "To list all clients, type \\[p4-clients].\n"
