@@ -414,6 +414,22 @@ arguments to p4 commands."
 
 (define-derived-mode p4-basic-mode nil "P4 Basic")
 
+(defface p4-form-comment-face
+  '((t :inherit font-lock-comment-face))
+  "Face for comment in P4 form mode."
+  :group 'p4-faces)
+(defvar p4-form-comment-face 'p4-form-comment-face)
+
+(defface p4-form-keyword-face
+  '((t :inherit font-lock-keyword-face))
+  "Face for keyword in P4 form mode."
+  :group 'p4-faces)
+(defvar p4-form-keyword-face 'p4-form-keyword-face)
+
+(defvar p4-form-font-lock-keywords
+  '(("^#.*$" . p4-form-comment-face)
+    ("^\\w+:" . p4-form-keyword-face)))
+
 (defvar p4-form-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map "\C-c\C-c" 'p4-form-commit)
@@ -423,7 +439,8 @@ arguments to p4 commands."
 (define-derived-mode p4-form-mode indented-text-mode "P4 Form"
   "Major mode for P4 form derived from `indented-text-mode'"
   (setq fill-column 80
-	indent-tabs-mode t))
+	indent-tabs-mode t
+	font-lock-defaults '(p4-form-font-lock-keywords t)))
 
 (defun p4-make-derived-map (base-map)
   (let ((map (make-sparse-keymap)))
