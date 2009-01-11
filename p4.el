@@ -431,7 +431,7 @@ arguments to p4 commands."
     (set-keymap-parent map base-map)
     map))
 
-(defvar p4-filelog-map
+(defvar p4-filelog-mode-map
   (let ((map (p4-make-derived-map p4-basic-mode-map)))
     (define-key map "d"	 'p4-diff2)
     (define-key map "f"	 'p4-find-file-other-window)
@@ -450,6 +450,8 @@ arguments to p4 commands."
     (define-key map "N" (lookup-key map "p"))
     map)
   "The key map to use for selecting filelog properties.")
+
+(define-derived-mode p4-filelog-mode p4-basic-mode "P4 File Log")
 
 (defvar p4-opened-map
   (let ((map (p4-make-derived-map p4-basic-mode-map)))
@@ -479,13 +481,13 @@ arguments to p4 commands."
 
 ;;; All functions start here.
 
-(defun p4-make-output-buffer (buffer-name mode)
+(defun p4-make-output-buffer (buffer-name &optional mode)
   "Make read only buffer and return the buffer."
   (let ((dir default-directory)
 	(inhibit-read-only t))
     (with-current-buffer (get-buffer-create buffer-name)
       (erase-buffer)
-      (funcall mode)
+      (funcall (or mode 'p4-basic-mode))
       (setq buffer-read-only t)
       (setq buffer-undo-list t)
       (cd dir)
@@ -770,10 +772,8 @@ controlled files."
 	(funcall callback)
 	(set-buffer-modified-p nil)))))
 
-(defun p4-async-command (cmd arguments buffer-name callback)
-  (let ((buffer (p4-make-output-buffer buffer-name 'p4-basic-mode))
-	process)
-    (setq process (p4-start-p4 buffer (cons cmd arguments)))
+(defun p4-async-command (cmd arguments buffer callback)
+  (let ((process (p4-start-p4 buffer (cons cmd arguments))))
     (lexical-let ((callback callback))
       (set-process-sentinel process
 			    (lambda (process message)
@@ -1092,10 +1092,10 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
 	(goto-char (point-min)))))
 
 (defun p4-file-change-log (cmd file-list-spec)
-  (let ((p4-filelog-buffer
-	 (concat "*P4 " cmd ": "
-		 (p4-list-to-string file-list-spec) "*")))
-    (p4-async-command cmd (cons "-l" file-list-spec) p4-filelog-buffer
+  (let ((buffer (p4-make-output-buffer
+		 (concat "*P4 " cmd ": " (p4-list-to-string file-list-spec) "*")
+		 'p4-filelog-mode)))
+    (p4-async-command cmd (cons "-l" file-list-spec) buffer
 		      (lambda ()
 			(p4-activate-file-change-log-buffer (current-buffer))))))
 
@@ -1145,7 +1145,6 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
 				    (list (cons 'invisible t)
 					  (cons 'isearch-open-invisible t)))))
       (p4-find-change-numbers buffer (point-min) (point-max))
-      (use-local-map p4-filelog-map)
       (setq buffer-invisibility-spec (list))
       (p4-move-buffer-point-to-top buffer))))
 
@@ -1702,10 +1701,11 @@ This is equivalent to \"sync -f\"
   "sync"
   "To synchronise the local view with the depot, type \\[p4-get].\n"
   (interactive)
-  (let (args)
+  (let (args buffer)
     (if current-prefix-arg
 	(setq args (p4-make-list-from-string (p4-read-arg-string "p4 get: "))))
-    (p4-async-command "get" args (concat "*P4 Get: (" (p4-current-client) ")*")
+    (setq buffer (p4-make-output-buffer (concat "*P4 Get: (" (p4-current-client) ")*")))
+    (p4-async-command "get" args buffer
 		      (lambda ()
 			(p4-refresh-files-in-buffers)
 			(p4-mark-depot-list-buffer)))))
