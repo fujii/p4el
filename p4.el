@@ -1165,13 +1165,12 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
 	(setq args (p4-make-list-from-string
 		    (p4-read-arg-string "p4 files: " (p4-buffer-file-name-2))))
       (setq args (list args)))
-    (p4-noinput-buffer-action "files" nil t args)
-    (save-excursion
-      (set-buffer p4-output-buffer-name)
-      (p4-find-change-numbers p4-output-buffer-name (point-min) (point-max)))
-    (p4-make-depot-list-buffer
-     (concat "*P4 Files: (" (p4-current-client) ") " (car args) "*"))))
-
+    (p4-call-command "files" args
+		     (concat "*P4 Files: (" (p4-current-client) ") " (car args) "*")
+		     'p4-opened-mode
+		     (lambda ()
+		       (p4-find-change-numbers (current-buffer) (point-min) (point-max))
+		       (p4-mark-depot-list-buffer)))))
 
 (defvar p4-server-version-cache nil)
 
