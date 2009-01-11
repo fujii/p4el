@@ -2249,10 +2249,9 @@ character events"
 		     'p4-mark-depot-list-buffer)))
 
 (defun p4-update-opened-list ()
-  (if (get-buffer-window (concat "*Opened Files: " (p4-current-client) "*"))
-      (progn
-	(setq current-prefix-arg nil)
-	(p4-opened-internal nil))))
+  (when (get-buffer-window (concat "*Opened Files: " (p4-current-client) "*"))
+    ;; (p4-opened-internal nil)
+    ))
 
 (defun p4-regexp-create-links (buffer-name regexp property)
   (save-excursion
