@@ -2021,9 +2021,7 @@ character events"
 			   (list change))))
 	  (user (p4-user user))
 	  (group (p4-group group))
-	  (client (p4-form-command
-		   "client" "Description:\n\t"
-		   (concat "*P4 Client: " client "*") "client" (list client)))
+	  (client (p4-client client))
 	  (label (p4-label (list label)))
 	  (branch (p4-branch (list branch)))
 
@@ -2461,20 +2459,17 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
 				  change-buf-name nil args)))))
 
 ;; The p4 client command
-(defp4cmd p4-client ()
+(defp4cmd p4-client (&rest args)
   "client" "To edit a client specification, type \\[p4-client].\n"
-  (interactive)
-  (let (args
-	(client-buf-name "*P4 client*"))
-    (if (buffer-live-p (get-buffer client-buf-name))
-	(switch-to-buffer-other-window (get-buffer client-buf-name))
-      (if current-prefix-arg
-	  (setq args (p4-make-list-from-string
-		      (p4-read-arg-string "p4 client: " nil "client"))))
-      (if (p4-cmd-line-flags args)
-	  (p4-noinput-buffer-action "client" nil t args)
-	(p4-form-command "client" "\\(Description\\|View\\):\n\t"
-				  client-buf-name nil args)))))
+  (interactive   
+   (if current-prefix-arg
+       (p4-make-list-from-string
+	(p4-read-arg-string "p4 client: " nil "client"))))
+  (let ((client-buf-name "*P4 client*"))
+    (if (p4-cmd-line-flags args)
+	(p4-noinput-buffer-action "client" nil t args)
+      (p4-form-command "client" "\\(Description\\|View\\):\n\t"
+		       client-buf-name nil args)))))
 
 (defp4cmd p4-clients ()
   "clients" "To list all clients, type \\[p4-clients].\n"
