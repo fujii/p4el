@@ -405,6 +405,8 @@ arguments to p4 commands."
     (define-key map "k"	 'p4-scroll-down-1-line)
     (define-key map "j"	 'p4-scroll-up-1-line)
     (define-key map "b"	 'p4-scroll-down-1-window)
+    (define-key map "n"	 'next-line)
+    (define-key map "p"	 'previous-line)
     (define-key map [backspace] 'p4-scroll-down-1-window)
     (define-key map " "	 'p4-scroll-up-1-window)
     (define-key map "<"	 'p4-top-of-buffer)
