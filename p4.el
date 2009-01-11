@@ -757,9 +757,7 @@ controlled files."
 					   (end-of-line)
 					   (point)))))
 	  (p4-push-window-config)
-	  (if (not (one-window-p))
-	      (delete-other-windows))
-	  (display-buffer p4-output-buffer-name t))))
+	  (display-buffer p4-output-buffer-name))))
   (if (and do-revert (p4-buffer-file-name))
       (revert-buffer t t)))
 
