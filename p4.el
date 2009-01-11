@@ -2719,7 +2719,7 @@ the current value of P4PORT."
 (defvar p4-prefix-map
   (let ((map (make-sparse-keymap)))
     (define-key map "a" 'p4-add)
-    (define-key map "b" 'p4-bug-report)
+    (define-key map "b" 'p4-branches)
     (define-key map "B" 'p4-branch)
     (define-key map "c" 'p4-client)
     (define-key map "C" 'p4-changes)
