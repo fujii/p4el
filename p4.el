@@ -62,6 +62,7 @@
 
 ;;; Code:
 
+(require 'comint)
 (require 'easymenu)
 (eval-when-compile
   (require 'cl))
