@@ -896,8 +896,8 @@ command if t.\n"
     (if current-prefix-arg
 	(setq args (p4-make-list-from-string
 		    (p4-read-arg-string "p4 diff: " p4-default-diff-options))))
-    (p4-noinput-buffer-action "diff" nil 's args)
-    (p4-activate-diff-buffer "*P4 diff*")))
+    (p4-call-command "diff" args "*P4 diff*" 'p4-diff-mode
+		     'p4-activate-diff-buffer)))
 
 (defun p4-get-file-rev (default-name rev)
   (if (string-match "^\\([0-9]+\\|none\\|head\\|have\\)$" rev)
@@ -937,11 +937,10 @@ When visiting a depot file, type \\[p4-diff2] and enter the versions.\n"
     (setq diff-version1 (p4-get-file-rev (p4-buffer-file-name-2) version1))
     (setq diff-version2 (p4-get-file-rev (p4-buffer-file-name-2) version2))
 
-    (p4-noinput-buffer-action "diff2" nil t
-			      (append diff-options
-				      (list diff-version1
-					    diff-version2)))
-    (p4-activate-diff-buffer "*P4 diff2*")))
+    (p4-call-command "diff2" (append diff-options
+				     (list diff-version1
+					   diff-version2))
+		     "*P4 diff2*" 'p4-activate-diff-buffer)))
 
 ;; p4-ediff for all those who diff using ediff
 
@@ -2139,11 +2138,9 @@ character events"
 	(p4-set-extent-properties start end
 				  (list (cons 'face face-property)))))))
 
-(defun p4-activate-diff-buffer (buffer-name)
-  (p4-make-depot-list-buffer buffer-name)
+(defun p4-activate-diff-buffer ()
   (save-excursion
-    (set-buffer buffer-name)
-    (setq buffer-read-only nil)
+    (p4-mark-depot-list-buffer)
     (if p4-colorized-diffs
 	(progn
 	  (p4-buffer-set-face-property "^=.*\n" 'p4-diff-file-face)
@@ -2187,7 +2184,7 @@ character events"
 	   (if (re-search-forward "^\\(\\.\\.\\.\\|====\\)" nil t)
 	       (match-beginning 0)
 	     (point-max))))
-      (p4-find-change-numbers buffer-name (point-min) stop))
+      (p4-find-change-numbers (current-buffer) (point-min) stop))
 
     (goto-char (point-min))
     (if (looking-at "^Change [0-9]+ by \\([^ @]+\\)@\\([^ \n]+\\)")
@@ -2202,9 +2199,7 @@ character events"
 	  (p4-create-active-link (match-beginning cl-match)
 				 (match-end cl-match)
 				 (list (cons 'client cur-client)))))
-
-    (use-local-map p4-diff-mode-map)
-    (setq buffer-read-only t)))
+    ))
 
 
 ;; The p4 describe command
@@ -2218,10 +2213,10 @@ character events"
 
 ;; Internal version of the p4 describe command
 (defun p4-describe-internal (arg-string)
-  (p4-noinput-buffer-action
-   "describe" nil t arg-string)
-  (p4-activate-diff-buffer
-   (concat "*P4 describe: " (p4-list-to-string arg-string) "*")))
+  (p4-call-command "describe" arg-string
+		   (concat "*P4 describe: " (p4-list-to-string arg-string) "*")
+		   'p4-diff-mode
+		   'p4-activate-diff-buffer))
 
 ;; The p4 opened command
 (defp4cmd p4-opened ()
