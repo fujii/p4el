@@ -833,8 +833,9 @@ controlled files."
 	  (funcall callback))
 	(set-buffer-modified-p nil)))))
 
-(defun p4-async-command (cmd arguments buffer callback)
-  (let ((process (p4-start-p4 buffer (cons cmd arguments))))
+(defun p4-async-command (cmd args buffer-name &optional mode callback)
+  (let* ((buffer (p4-make-output-buffer buffer-name mode))
+	 (process (p4-start-p4 buffer (cons cmd args))))
     (lexical-let ((callback callback))
       (set-process-sentinel process
 			    (lambda (process message)
@@ -1743,8 +1744,9 @@ This is equivalent to \"sync -f\"
   (let (args buffer)
     (if current-prefix-arg
 	(setq args (p4-make-list-from-string (p4-read-arg-string "p4 get: "))))
-    (setq buffer (p4-make-output-buffer (concat "*P4 Get: (" (p4-current-client) ")*")))
-    (p4-async-command "get" args buffer
+    (setq buffer )
+    (p4-async-command "get" args
+		      (p4-make-output-buffer (concat "*P4 Get: (" (p4-current-client) ")*")) nil
 		      (lambda ()
 			(p4-refresh-files-in-buffers)
 			(p4-mark-depot-list-buffer)))))
