@@ -1137,12 +1137,11 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
 	(goto-char (point-min)))))
 
 (defun p4-file-change-log (cmd file-list-spec)
-  (let ((buffer (p4-make-output-buffer
-		 (concat "*P4 " cmd ": " (p4-list-to-string file-list-spec) "*")
-		 'p4-filelog-mode)))
-    (p4-async-command cmd (cons "-l" file-list-spec) buffer
-		      (lambda ()
-			(p4-activate-file-change-log-buffer (current-buffer))))))
+  (p4-call-command cmd (cons "-l" file-list-spec)
+		   (concat "*P4 " cmd ": " (p4-list-to-string file-list-spec) "*")
+		   'p4-filelog-mode
+		   (lambda ()
+		     (p4-activate-file-change-log-buffer (current-buffer)))))
 
 (defun p4-activate-file-change-log-buffer (buffer)
   (with-current-buffer buffer
