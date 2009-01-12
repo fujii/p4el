@@ -789,15 +789,37 @@ controlled files."
   (if (and do-revert (p4-buffer-file-name))
       (revert-buffer t t)))
 
-(defun p4-call-command (cmd args buffer-name &optional mode callback)
+(defun p4-call-command-process-filter (proc string)
+  "Process filter for `p4-call-command'. Keep point position if `bobp'."
+  (let ((buffer (process-buffer proc)))
+    (when (buffer-live-p buffer)
+      (with-current-buffer buffer
+	(let ((inhibit-read-only t)
+	      (moving (and (= (point) (process-mark proc))
+			   (not (bobp)))))
+	  (save-excursion
+	    (goto-char (process-mark proc))
+	    (insert string)
+	    (set-marker (process-mark proc) (point)))
+	  (if moving (goto-char (process-mark proc))))))))
+
+(defun p4-call-command-process-sentinel (callback process message)
   (let ((inhibit-read-only t)
-	(buffer (p4-make-output-buffer buffer-name mode)))
-    (p4-exec-p4 buffer (cons cmd args))
-    (with-current-buffer buffer
-      (goto-char (point-min))
-      (when callback
-	(funcall callback))
-      (set-buffer-modified-p nil))
+	(buffer (process-buffer process)))
+    (when (buffer-live-p buffer)
+      (with-current-buffer buffer
+	(when callback
+	  (funcall callback))
+	(set-buffer-modified-p nil)))))
+
+(defun p4-call-command (cmd args buffer-name &optional mode callback)
+  (let* ((buffer (p4-make-output-buffer buffer-name mode))
+	 (process (p4-start-p4 buffer (cons cmd args))))
+    (set-process-filter process 'p4-call-command-process-filter)
+    (lexical-let ((callback callback))
+      (set-process-sentinel process
+			    (lambda (process message)
+			      (p4-call-command-process-sentinel callback process message))))
     (p4-push-window-config)
     (pop-to-buffer buffer)))
 
@@ -807,7 +829,8 @@ controlled files."
     (when (buffer-live-p buffer)
       (with-current-buffer buffer
 	(insert "Process " (process-name process) " " message)
-	(funcall callback)
+	(when callback
+	  (funcall callback))
 	(set-buffer-modified-p nil)))))
 
 (defun p4-async-command (cmd arguments buffer callback)
