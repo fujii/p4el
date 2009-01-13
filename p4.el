@@ -1800,9 +1800,9 @@ Argument ARG command for which help is needed.
   (interactive)
   (let ((args (p4-make-list-from-string
 	       (p4-read-arg-string "p4 integ: " "-b "))))
-    (p4-call-command "integ" args "*P4 integ*"
-		     'p4-opened-mode
-		     'p4-mark-depot-list-buffer)))
+    (p4-async-command "integ" args "*P4 integ*"
+		      'p4-opened-mode
+		      'p4-mark-depot-list-buffer)))
 
 (defp4cmd p4-resolve ()
   "resolve"
