@@ -63,7 +63,10 @@
 ;;; Code:
 
 (require 'comint)
+(require 'dired)
 (require 'easymenu)
+(require 'ediff)
+(require 'timer)
 (eval-when-compile
   (require 'cl))
 
@@ -78,12 +81,6 @@
 (if (string-match "XEmacs\\|Lucid" emacs-version)
     (setq p4-running-xemacs t)
   (setq p4-running-emacs t))
-
-;; Pick up a couple of missing function defs
-(if p4-running-xemacs
-    (eval-when-compile
-      (require 'timer)
-      (require 'dired)))
 
 (defgroup p4 nil "Perforce VC System." :group 'tools)
 
@@ -351,8 +348,6 @@ between them, that text will be marked with this face."
   "List of functions to be called after a p4 client is changed.
 The buffer's local variables (if any) will have been processed before the
 functions are called.")
-
-(if p4-running-emacs (require 'timer))
 
 (defvar p4-timer nil "Timer object that will be set to cleanup the caches
 periodically.")
@@ -999,7 +994,6 @@ When visiting a depot file, type \\[p4-diff2] and enter the versions.\n"
 (defun p4-ediff ()
   "Use ediff to compare file with its original client version."
   (interactive)
-  (require 'ediff)
   (if current-prefix-arg
       (call-interactively 'p4-ediff2)
     (progn
