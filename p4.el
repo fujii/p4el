@@ -581,7 +581,7 @@ stack."
 	      p4-window-config-stack))
   (while (> (length p4-window-config-stack) p4-window-config-stack-size)
     (setq p4-window-config-stack
-	  (reverse (cdr (reverse p4-window-config-stack))))))
+	  (nreverse (cdr (nreverse p4-window-config-stack))))))
 
 (defun p4-pop-window-config (num)
   "Pop `num' elements from the `p4-window-config-stack' stack and use
