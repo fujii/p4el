@@ -2347,7 +2347,7 @@ character events"
   (interactive)
   (let ((args (p4-make-list-from-string (p4-read-arg-string "p4 fix: "
 							    nil "job"))))
-    (p4-noinput-buffer-action "fix" nil t args)))
+    (p4-call-command "fix" args p4-output-buffer-name)))
 
 ;; The p4 fixes command
 (defp4cmd p4-fixes ()
