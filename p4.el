@@ -1310,15 +1310,11 @@ name and a client name."
 	 (client-root (p4-get-client-root current-client))
 	 (re-current-client (regexp-quote current-client))
 	 (re-client-root (regexp-quote client-root))
-	 files pmin)
-    (save-excursion
-      (get-buffer-create p4-output-buffer-name)
-      (set-buffer p4-output-buffer-name)
-      (goto-char (point-max))
-      (setq pmin (point))
+	 files)
+    (with-temp-buffer
       (insert "\n")
       (apply 'p4-call-p4-here "where" file-list)
-      (goto-char pmin)
+      (goto-char (point-min))
       (if (< (p4-get-server-version) 98)
 	  (while (re-search-forward
 		  (concat "^\\([^\n]+\\) //" re-current-client
@@ -1333,8 +1329,7 @@ name and a client name."
 			"\\([^\n]+\\) \\(" re-client-root ".*\\)$") nil t)
 	  (setq files (cons
 		       (cons
-			(match-string 1) (match-string 3)) files))))
-      (delete-region pmin (point-max)))
+			(match-string 1) (match-string 3)) files)))))
     files))
 
 (defun p4-mark-depot-list-buffer (&optional print-buffer)
