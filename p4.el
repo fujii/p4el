@@ -587,12 +587,12 @@ stack."
   "Pop `num' elements from the `p4-window-config-stack' stack and use
 the last popped element to restore the window configuration."
   (interactive "p")
-  (while (> num 0)
-    (if (eq p4-window-config-stack nil)
-	(error "window config stack empty"))
+  (when (> num 0)
+    (setq p4-window-config-stack (nthcdr (1- num) p4-window-config-stack))
+    (unless p4-window-config-stack
+      (error "window config stack empty"))
     (set-window-configuration (car p4-window-config-stack))
-    (setq p4-window-config-stack (cdr p4-window-config-stack))
-    (setq num (1- num))))
+    (setq p4-window-config-stack (cdr p4-window-config-stack))))
 
 
 ;; The menu definition is in the XEmacs format. Emacs parses and converts
