@@ -810,6 +810,12 @@ controlled files."
       (with-current-buffer buffer
 	(when callback
 	  (funcall callback))
+	(unless (string-equal message "finished\n")
+	  (save-excursion
+	    (goto-char (process-mark process))
+	    (insert "Process " (process-name process) " " message)
+	    (set-marker (process-mark process) (point)))
+	  (ding))	  
 	(set-buffer-modified-p nil)))))
 
 (defun p4-call-command (cmd args buffer-name &optional mode callback)
@@ -828,9 +834,11 @@ controlled files."
 	(buffer (process-buffer process)))
     (when (buffer-live-p buffer)
       (with-current-buffer buffer
-	(insert "Process " (process-name process) " " message)
 	(when callback
 	  (funcall callback))
+	(insert "Process " (process-name process) " " message)
+	(unless (string-equal message "finished\n")
+	  (ding))
 	(set-buffer-modified-p nil)))))
 
 (defun p4-async-command (cmd args buffer-name &optional mode callback)
