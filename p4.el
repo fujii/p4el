@@ -405,7 +405,7 @@ arguments to p4 commands."
     (define-key map "\e\t" 'p4-backward-active-link)
     (define-key map [(shift tab)] 'p4-backward-active-link)
     (define-key map "\C-m" 'p4-buffer-commands)
-    (define-key map "q"	 'p4-quit-current-buffer)
+    (define-key map "q"	 'p4-pop-window-config)
     (define-key map "k"	 'p4-scroll-down-1-line)
     (define-key map "j"	 'p4-scroll-up-1-line)
     (define-key map "b"	 'p4-scroll-down-1-window)
@@ -592,9 +592,7 @@ the last popped element to restore the window configuration."
 	(error "window config stack empty"))
     (set-window-configuration (car p4-window-config-stack))
     (setq p4-window-config-stack (cdr p4-window-config-stack))
-    (setq num (1- num)))
-  (message "window config popped (stack size %d)"
-	   (length p4-window-config-stack)))
+    (setq num (1- num))))
 
 
 ;; The menu definition is in the XEmacs format. Emacs parses and converts
@@ -1977,13 +1975,6 @@ This command will execute the integrate/delete commands automatically.
   (setq truncate-lines (not truncate-lines))
   (save-window-excursion
     (recenter)))
-
-(defun p4-quit-current-buffer (pnt)
-  "Quit a buffer"
-  (interactive "d")
-  (if (not (one-window-p))
-      (delete-window)
-    (bury-buffer)))
 
 (defun p4-buffer-mouse-clicked (event)
   "Function to translate the mouse clicks in a P4 filelog buffer to
