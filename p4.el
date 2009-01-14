@@ -516,6 +516,13 @@ arguments to p4 commands."
       (cd dir)
       (current-buffer))))
 
+(defun p4-get-writable-output-buffer ()
+  "Do not use this function. Old code assumes output buffer is writable."
+  (let ((buffer (p4-make-output-buffer p4-output-buffer-name)))
+    (with-current-buffer buffer
+      (setq buffer-read-only nil))
+    buffer))
+
 ;; A generic function that we use to execute p4 commands
 ;; If executing the p4 command fails with a "password invalid" error
 ;; and no-login is false, p4-login will be called to let the user
@@ -675,7 +682,7 @@ the last popped element to restore the window configuration."
   (defun p4-depot-output (command &optional args)
     "Executes p4 command inside a buffer.
 Returns the buffer."
-    (let ((buffer (generate-new-buffer p4-output-buffer-name)))
+    (let ((buffer (p4-get-writable-output-buffer)))
       (p4-exec-p4 buffer (cons command args) t)
       buffer))
 
@@ -755,7 +762,7 @@ controlled files."
 	  (progn
 	    (get-buffer-create p4-output-buffer-name);; We do these two lines
 	    (kill-buffer p4-output-buffer-name)))    ;; to ensure no duplicates
-      (p4-exec-p4 (get-buffer-create p4-output-buffer-name)
+      (p4-exec-p4 (p4-get-writable-output-buffer)
 		  (append (list cmd) arguments)
 		  t no-login))
     (p4-partial-cache-cleanup cmd)
@@ -1001,7 +1008,7 @@ When visiting a depot file, type \\[p4-diff2] and enter the versions.\n"
 				(list "-q"
 				      (concat (p4-buffer-file-name) "#have")))
       (let ((local (current-buffer))
-	    (depot (get-buffer-create p4-output-buffer-name)))
+	    (depot (p4-get-writable-output-buffer)))
 	(ediff-buffers local
 		       depot
 		       `((lambda ()
@@ -1237,7 +1244,7 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
     (setq ser-ver (cdr (assoc p4-port p4-server-version-cache)))
     (if (not ser-ver)
 	(save-excursion
-	  (get-buffer-create p4-output-buffer-name)
+	  (p4-get-writable-output-buffer)
 	  (set-buffer p4-output-buffer-name)
 	  (goto-char (point-max))
 	  (setq pmin (point))
@@ -1257,7 +1264,7 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
    This can be used by any other macro that requires this value."
   (let (p4-client-root pmin)
     (save-excursion
-      (get-buffer-create p4-output-buffer-name)
+      (p4-get-writable-output-buffer)
       (set-buffer p4-output-buffer-name)
       (goto-char (point-max))
       (setq pmin (point))
@@ -1524,10 +1531,8 @@ type \\[p4-blame]"
 (defalias 'p4-print-with-rev-history 'p4-blame)
 
 (defun p4-blame-int (file-spec)
-  (get-buffer-create p4-output-buffer-name);; We do these two lines
-  (kill-buffer p4-output-buffer-name)      ;; to ensure no duplicates
   (let ((file-name file-spec)
-	(buffer (get-buffer-create p4-output-buffer-name))
+	(buffer (p4-get-writable-output-buffer))
 	head-name  ;; file spec of the head revision for this blame assignment
 	branch-p   ;; have we tracked into a branch?
 	cur-file   ;; file name of the current branch during blame assignment
@@ -1831,7 +1836,7 @@ This command will execute the integrate/delete commands automatically.
     (setq from-file (p4-read-arg-string "rename from: " (p4-buffer-file-name-2)))
     (setq to-file (p4-read-arg-string "rename to: " (p4-buffer-file-name-2)))
     (p4-noinput-buffer-action "integ" nil t (list from-file to-file))
-    (p4-exec-p4 (get-buffer-create p4-output-buffer-name)
+    (p4-exec-p4 (p4-get-writable-output-buffer)
 		(list "delete" from-file)
 		nil)))
 
@@ -2436,7 +2441,7 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
 	  (setq msg (buffer-substring max (point-max)))
 	  (delete-region max (point-max))
 	  (save-excursion
-	    (set-buffer (get-buffer-create p4-output-buffer-name))
+	    (set-buffer (p4-get-writable-output-buffer))
 	    (delete-region (point-min) (point-max))
 	    (insert msg))
 	  (kill-buffer nil)
@@ -2875,7 +2880,7 @@ list."
   (save-excursion
     (if (and p4-notify-list (not (equal p4-notify-list "")))
 	(save-excursion
-	  (set-buffer (get-buffer-create p4-output-buffer-name))
+	  (set-buffer (p4-get-writable-output-buffer))
 	  (goto-char (point-min))
 	  (if (re-search-forward "[0-9]+.*submitted" (point-max) t)
 	      (let (p4-matched-change)
@@ -2906,11 +2911,11 @@ list."
 
 		  (kill-buffer nil)))
 	    (save-excursion
-	      (set-buffer (get-buffer-create p4-output-buffer-name))
+	      (set-buffer (p4-get-writable-output-buffer))
 	      (goto-char (point-max))
 	      (insert "\np4-do-notify: No Change Submissions found."))))
       (save-excursion
-	(set-buffer (get-buffer-create p4-output-buffer-name))
+	(set-buffer (p4-get-writable-output-buffer))
 	(goto-char (point-max))
 	(insert "\np4-do-notify: Notification list not set.")))))
 
@@ -3613,7 +3618,7 @@ Emacs P4."
     client))
 
 (defun p4-get-config-info (file-name token)
-  (let ((output-buffer (generate-new-buffer p4-output-buffer-name))
+  (let ((output-buffer (p4-get-writable-output-buffer))
 	(data (getenv token)))
     (save-excursion
       (set-buffer output-buffer)
@@ -3635,7 +3640,7 @@ Emacs P4."
       (setq cur-client (p4-get-config-info p4-config-file "P4CLIENT")))
     (if (not cur-client)
 	(save-excursion
-	  (get-buffer-create p4-output-buffer-name)
+	  (p4-get-writable-output-buffer)
 	  (set-buffer p4-output-buffer-name)
 	  (goto-char (point-max))
 	  (setq pmin (point))
@@ -3656,8 +3661,6 @@ that."
       (p4-get-config-info p4-config-file "P4PORT"))))
 
 (defun p4-save-opened-files ()
-  (get-buffer-create p4-output-buffer-name);; We do these two lines
-  (kill-buffer p4-output-buffer-name)      ;; to ensure no duplicates
   (let ((output-buffer (p4-depot-output "opened"))
 	opened)
     (save-excursion
@@ -3731,7 +3734,7 @@ that."
     (if (not (member "-s" args))
 	(setq pw (read-passwd "Enter perforce password: ")))
     (save-excursion
-      (set-buffer (get-buffer-create p4-output-buffer-name))
+      (set-buffer (p4-get-writable-output-buffer))
       (delete-region (point-min) (point-max))
       (insert pw)
       (apply 'call-process-region (point-min) (point-max)
