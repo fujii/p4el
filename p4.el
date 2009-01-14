@@ -2374,7 +2374,8 @@ character events"
 
 
 (defun p4-check-cmd-line-switch (args)
-  (when (find-if (lambda (e) (member e '("-i" "-o"))) args)
+  (when (or (member "-i" args)
+	    (member "-o" args))
     (error "Do not specify -i or -o switches.")))
 
 (defun p4-form-command (p4-this-command &optional
