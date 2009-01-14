@@ -3744,7 +3744,7 @@ that."
   (let (args)
     (if current-prefix-arg
 	(setq args (list (p4-read-arg-string "p4 logout: "))))
-    (p4-noinput-buffer-action "logout" nil 's args nil)))
+    (p4-simple-command "logout" args)))
 
 (provide 'p4)
 
