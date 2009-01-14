@@ -400,7 +400,7 @@ arguments to p4 commands."
     (define-key map "\e\t" 'p4-backward-active-link)
     (define-key map [(shift tab)] 'p4-backward-active-link)
     (define-key map "\C-m" 'p4-buffer-commands)
-    (define-key map "q"	 'p4-pop-window-config)
+    (define-key map "q"	 'p4-quit-current-buffer)
     (define-key map "k"	 'p4-scroll-down-1-line)
     (define-key map "j"	 'p4-scroll-up-1-line)
     (define-key map "b"	 'p4-scroll-down-1-window)
@@ -1969,6 +1969,12 @@ This command will execute the integrate/delete commands automatically.
   (setq truncate-lines (not truncate-lines))
   (save-window-excursion
     (recenter)))
+
+(defun p4-quit-current-buffer ()
+  "Quit a buffer"
+  (interactive)
+  (bury-buffer)
+  (p4-pop-window-config 1))
 
 (defun p4-buffer-mouse-clicked (event)
   "Function to translate the mouse clicks in a P4 filelog buffer to
