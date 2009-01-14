@@ -731,42 +731,17 @@ controlled files."
 		body))))
 
 (defun p4-noinput-buffer-action (cmd
-				 do-revert
+				 dummy
 				 show-output
-				 &optional arguments preserve-buffer)
+				 &optional arguments)
   "Internal function called by various p4 commands."
-  (save-excursion
-    (save-excursion
-      (if (not preserve-buffer)
-	  (progn
-	    (get-buffer-create p4-output-buffer-name);; We do these two lines
-	    (kill-buffer p4-output-buffer-name)))    ;; to ensure no duplicates
-      (p4-exec-p4 (p4-get-writable-output-buffer)
-		  (append (list cmd) arguments)
-		  t))
-    (p4-partial-cache-cleanup cmd)
-    (if show-output
-	(if (and
-	     (eq show-output 's)
-	     (= (save-excursion
-		  (set-buffer p4-output-buffer-name)
-		  (count-lines (point-min) (point-max)))
-		1)
-	     (not (save-excursion
-		    (set-buffer p4-output-buffer-name)
-		    (goto-char (point-min))
-		    (looking-at "==== "))))
-	    (save-excursion
-	      (set-buffer p4-output-buffer-name)
-	      (message (buffer-substring (point-min)
-					 (save-excursion
-					   (goto-char (point-min))
-					   (end-of-line)
-					   (point)))))
-	  (p4-push-window-config)
-	  (display-buffer p4-output-buffer-name))))
-  (if (and do-revert (p4-buffer-file-name))
-      (revert-buffer t t)))
+  (p4-exec-p4 (p4-get-writable-output-buffer)
+	      (append (list cmd) arguments)
+	      t)
+  (p4-partial-cache-cleanup cmd)
+  (when show-output
+    (p4-push-window-config)
+    (display-buffer p4-output-buffer-name)))
 
 (defun p4-simple-command (cmd args)
   (let* ((buffer (p4-make-output-buffer p4-output-buffer-name))
@@ -1664,8 +1639,7 @@ type \\[p4-blame]"
 		    (setq ra (1+ ra)))))))
 	  (setq tmp-alst (cdr tmp-alst))))
       (p4-noinput-buffer-action "print" nil t
-				(list (format "%s#%d" fullname head-rev))
-				t)
+				(list (format "%s#%d" fullname head-rev)))
       (p4-font-lock-buffer p4-output-buffer-name)
       (let (line cnum (old-cnum 0) change-data
 	    xth-rev xth-date xth-auth xth-file)
