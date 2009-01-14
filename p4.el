@@ -2367,6 +2367,10 @@ character events"
     (p4-noinput-buffer-action "where" nil 's args)))
 
 
+(defun p4-check-cmd-line-switch (args)
+  (when (find-if (lambda (e) (member e '("-i" "-o"))) args)
+    (error "Do not specify -i or -o switches.")))
+
 (defun p4-form-command (p4-this-command &optional
 					p4-regexp
 					p4-this-buffer
@@ -2392,6 +2396,8 @@ arguments to the P4-THIS-COMMAND.
 
 P4-OUT-ARGS is the optional argument passed that will be used as the list of
 arguments to P4-OUT-COMMAND."
+  (p4-check-cmd-line-switch p4-in-args)
+  (p4-check-cmd-line-switch p4-out-args)
   (let ((dir default-directory))
     (if p4-this-buffer
 	(set-buffer (get-buffer-create p4-this-buffer))
@@ -2458,10 +2464,6 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
 	     (p4-check-p4-executable)
 	     current-command))))
 
-(defun p4-cmd-line-flags (args)
-  (memq t (mapcar (lambda (x) (not (not (string-match "^-" x))))
-		  args)))
-
 ;; The p4 change command
 (defp4cmd p4-change ()
   "change" "To edit the change specification, type \\[p4-change].\n"
@@ -2473,10 +2475,8 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
       (if current-prefix-arg
 	  (setq args (p4-make-list-from-string
 		      (p4-read-arg-string "p4 change: " nil))))
-      (if (p4-cmd-line-flags args)
-	  (p4-noinput-buffer-action "change" nil t args)
-	(p4-form-command "change" "Description:\n\t"
-				  change-buf-name nil args)))))
+      (p4-form-command "change" "Description:\n\t"
+		       change-buf-name nil args))))
 
 ;; The p4 client command
 (defp4cmd p4-client (&rest args)
@@ -2486,10 +2486,8 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
        (p4-make-list-from-string
 	(p4-read-arg-string "p4 client: " nil "client"))))
   (let ((client-buf-name "*P4 client*"))
-    (if (p4-cmd-line-flags args)
-	(p4-noinput-buffer-action "client" nil t args)
-      (p4-form-command "client" "\\(Description\\|View\\):\n\t"
-		       client-buf-name nil args))))
+    (p4-form-command "client" "\\(Description\\|View\\):\n\t"
+		     client-buf-name nil args)))
 
 (defp4cmd p4-clients ()
   "clients" "To list all clients, type \\[p4-clients].\n"
@@ -2505,12 +2503,10 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
 		 (p4-read-arg-string "p4 branch: " nil "branch"))))
   (if (or (null args) (equal args (list "")))
       (error "Branch must be specified!")
-    (if (p4-cmd-line-flags args)
-	(p4-noinput-buffer-action "branch" nil t args)
-      (p4-form-command "branch" "Description:\n\t"
-				(concat "*P4 Branch: "
-					(car (reverse args)) "*")
-				"branch" args))))
+    (p4-form-command "branch" "Description:\n\t"
+		     (concat "*P4 Branch: "
+			     (car (reverse args)) "*")
+		     "branch" args)))
 
 (defp4cmd p4-branches ()
   "branches" "To list all branches, type \\[p4-branches].\n"
@@ -2526,12 +2522,10 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
 		 (p4-read-arg-string "p4 label: " nil "label"))))
   (if (or (null args) (equal args (list "")))
       (error "label must be specified!")
-    (if (p4-cmd-line-flags args)
-	(p4-noinput-buffer-action "label" nil t args)
-      (p4-form-command "label" "Description:\n\t"
-				(concat "*P4 label: "
-					(car (reverse args)) "*")
-				"label" args))))
+    (p4-form-command "label" "Description:\n\t"
+		     (concat "*P4 label: "
+			     (car (reverse args)) "*")
+		     "label" args)))
 
 (defp4cmd p4-labels ()
   "labels" "To display list of defined labels, type \\[p4-labels].\n"
@@ -2588,27 +2582,21 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
   "user" "To create or edit a user specification, type \\[p4-user].\n"
   (interactive (p4-make-list-from-string
 		(p4-read-arg-string "p4 user: " nil "user")))
-  (if (p4-cmd-line-flags args)
-      (p4-noinput-buffer-action "user" nil t args)
-    (p4-form-command "user" nil nil nil args)))
+  (p4-form-command "user" nil nil nil args))
 
 ;; The p4 group command
 (defp4cmd p4-group (&rest args)
   "group" "To create or edit a group specification, type \\[p4-group].\n"
   (interactive (p4-make-list-from-string
 		(p4-read-arg-string "p4 group: " nil "group")))
-  (if (p4-cmd-line-flags args)
-      (p4-noinput-buffer-action "group" nil t args)
-    (p4-form-command "group" nil nil nil args)))
+  (p4-form-command "group" nil nil nil args))
 
 ;; The p4 job command
 (defp4cmd p4-job (&rest args)
   "job" "To create or edit a job, type \\[p4-job].\n"
   (interactive (p4-make-list-from-string
 		(p4-read-arg-string "p4 job: " nil "job")))
-  (if (p4-cmd-line-flags args)
-      (p4-noinput-buffer-action "job" nil t args)
-    (p4-form-command "job" "Description:\n\t" nil nil args)))
+  (p4-form-command "job" "Description:\n\t" nil nil args))
 
 ;; The p4 jobspec command
 (defp4cmd p4-jobspec ()
