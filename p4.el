@@ -527,40 +527,19 @@ arguments to p4 commands."
 ;; If executing the p4 command fails with a "password invalid" error
 ;; and no-login is false, p4-login will be called to let the user
 ;; login. The failed command will then be retried.
-  (defun p4-exec-p4 (output-buffer args &optional clear-output-buffer
-				   no-login)
-    "Internal function called by various p4 commands.
+(defun p4-exec-p4 (output-buffer args &optional dummy)
+  "Internal function called by various p4 commands.
 Executes p4 in the current buffer's current directory
 with output to a dedicated output buffer.
 If successful, adds the P4 menu to the current buffer.
 Does auto re-highlight management (whatever that is)."
-    (save-excursion
-      (if (eq major-mode 'dired-mode)
-	  (let ((dir (dired-current-directory)))
-	    (set-buffer output-buffer)
-	    (setq default-directory dir)))
-      (if clear-output-buffer
-	  (progn
-	    (set-buffer output-buffer)
-	    (delete-region (point-min) (point-max))))
-      (let ((result
-	     ;; XXX - call-process has changed from using
-	     ;; p4-null-device to nil as its second argument
-	     ;; in emacs version 21.1.1?? - rv 1/25/2002
-	     (apply 'call-process (p4-check-p4-executable) nil
-		    output-buffer
-		    nil			; update display?
-		    args)))
-	(goto-char (point-min))
-	(if (and (not no-login)
-		 (or (looking-at "Perforce password (P4PASSWD) invalid or unset")
-		     (looking-at "Your session has expired, please login again.")))
-	    (progn
-	      (setq current-prefix-arg nil)
-	      (p4-login)
-	      (p4-exec-p4 output-buffer args clear-output-buffer t))
-	  (p4-menu-add)
-	  result))))
+  (let ((result (apply 'call-process (p4-check-p4-executable) nil
+		       output-buffer
+		       nil		; update display?
+		       args)))
+    (p4-menu-add)
+    result))
+
   (defun p4-call-p4-here (&rest args)
     "Internal function called by various p4 commands.
 Executes p4 in the current buffer (generally a temp)."
@@ -754,7 +733,7 @@ controlled files."
 (defun p4-noinput-buffer-action (cmd
 				 do-revert
 				 show-output
-				 &optional arguments preserve-buffer no-login)
+				 &optional arguments preserve-buffer)
   "Internal function called by various p4 commands."
   (save-excursion
     (save-excursion
@@ -764,7 +743,7 @@ controlled files."
 	    (kill-buffer p4-output-buffer-name)))    ;; to ensure no duplicates
       (p4-exec-p4 (p4-get-writable-output-buffer)
 		  (append (list cmd) arguments)
-		  t no-login))
+		  t))
     (p4-partial-cache-cleanup cmd)
     (if show-output
 	(if (and
@@ -3764,7 +3743,7 @@ that."
   (let (args)
     (if current-prefix-arg
 	(setq args (list (p4-read-arg-string "p4 logout: "))))
-    (p4-noinput-buffer-action "logout" nil 's args nil t)))
+    (p4-noinput-buffer-action "logout" nil 's args nil)))
 
 (provide 'p4)
 
