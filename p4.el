@@ -789,6 +789,33 @@ controlled files."
   (if (and do-revert (p4-buffer-file-name))
       (revert-buffer t t)))
 
+(defun p4-simple-command (cmd args)
+  (let* ((buffer (p4-make-output-buffer p4-output-buffer-name))
+	 (inhibit-read-only t)
+	 (ret (p4-exec-p4 (p4-get-writable-output-buffer) (cons cmd args))))
+    (p4-partial-cache-cleanup cmd)
+    (with-current-buffer buffer
+      (if (and
+	   (zerop ret)
+	   (= (count-lines (point-min) (point-max)) 1)
+	   (not (save-excursion
+		  (goto-char (point-min))
+		  (looking-at "==== "))))
+	  (message (buffer-substring (point-min)
+				     (save-excursion
+				       (goto-char (point-min))
+				       (end-of-line)
+				       (point))))
+	(p4-push-window-config)
+	(display-buffer buffer)))
+    (unless (zerop ret)
+      (error "P4 exits abnormally"))))
+
+(defun p4-simple-command-and-revert-buffer (cmd args)
+  (p4-simple-command cmd args)
+  (when (p4-buffer-file-name)
+    (revert-buffer)))
+  
 (defun p4-call-command-process-filter (proc string)
   "Process filter for `p4-call-command'. Keep point position if `bobp'."
   (let ((buffer (process-buffer proc)))
@@ -866,7 +893,7 @@ controlled files."
 		      (p4-read-arg-string "p4 edit: " (cons args 0))))
 	  (setq refresh-after t))
       (setq args (list args)))
-    (p4-noinput-buffer-action "edit" t (and show-output 's) args)
+    (p4-simple-command-and-revert-buffer "edit" args)
     (if refresh-after
 	(p4-refresh-files-in-buffers)))
   (p4-check-mode)
@@ -886,7 +913,7 @@ command if t.\n"
 		"")))
     (setq args (p4-make-list-from-string
 		(p4-read-arg-string "p4 reopen: " (cons args 0))))
-    (p4-noinput-buffer-action "reopen" t (and show-output 's) args))
+    (p4-simple-command-and-revert-buffer "reopen" args))
   (p4-check-mode)
   (p4-update-opened-list))
 
@@ -907,7 +934,7 @@ command if t.\n"
       (setq args (list args)))
     (if (yes-or-no-p "Really revert changes? ")
 	(progn
-	  (p4-noinput-buffer-action "revert" t (and show-output 's) args)
+	  (p4-simple-command-and-revert-buffer "revert" args)
 	  (if refresh-after
 	      (progn
 		(p4-refresh-files-in-buffers)
@@ -924,7 +951,7 @@ command if t.\n"
 	(setq args (p4-make-list-from-string
 		    (p4-read-arg-string "p4 lock: "
 					(p4-buffer-file-name-2)))))
-    (p4-noinput-buffer-action "lock" t 's args)
+    (p4-simple-command-and-revert-buffer "lock" args)
     (p4-update-opened-list)))
 
 ;; The p4 unlock command
@@ -936,7 +963,7 @@ command if t.\n"
 	(setq args (p4-make-list-from-string
 		    (p4-read-arg-string "p4 unlock: "
 					(p4-buffer-file-name-2)))))
-    (p4-noinput-buffer-action "unlock" t 's args)
+    (p4-simple-command-and-revert-buffer "unlock" args)
     (p4-update-opened-list)))
 
 ;; The p4 diff command
@@ -1074,7 +1101,7 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
 		      (p4-read-arg-string "p4 add: " (cons args 0))))
 	  (setq refresh-after t))
       (setq args (list args)))
-    (p4-noinput-buffer-action "add" nil 's args)
+    (p4-simple-command "add" args)
     (if refresh-after
 	(p4-check-mode-all-buffers)
       (p4-check-mode)))
@@ -1092,7 +1119,7 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
 					(p4-buffer-file-name-2))))
       (setq args (list args)))
     (if (yes-or-no-p "Really delete from depot? ")
-	(p4-noinput-buffer-action "delete" nil 's args)))
+	(p4-simple-command "delete" args)))
   (p4-check-mode)
   (p4-update-opened-list))
 
@@ -2364,7 +2391,7 @@ character events"
 	(setq args (p4-make-list-from-string
 		    (p4-read-arg-string "p4 where: "
 					(p4-buffer-file-name-2)))))
-    (p4-noinput-buffer-action "where" nil 's args)))
+    (p4-simple-command "where" args)))
 
 
 (defun p4-check-cmd-line-switch (args)
@@ -3708,8 +3735,7 @@ that."
 	 (new-pw (read-passwd "Enter new password: "))
 	 (new2-pw (read-passwd "Re-enter new password: ")))
     (if (string= new-pw new2-pw)
-	(p4-noinput-buffer-action "passwd" nil 's
-				  (list "-O" old-pw "-P" new-pw))
+	(p4-simple-command "passwd" (list "-O" old-pw "-P" new-pw))
       (error "Passwords don't match"))))
 
 (defp4cmd p4-login ()
