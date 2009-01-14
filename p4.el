@@ -1532,9 +1532,8 @@ type \\[p4-blame]"
 	  (setq head-rev (string-to-number (match-string 2 file-spec)))))
 
     ;; make sure the filespec is unambiguous
-    (p4-exec-p4 buffer (list "files" file-name) t)
-    (save-excursion
-      (set-buffer buffer)
+    (with-temp-buffer
+      (p4-exec-p4 t (list "files" file-name) t)
       (if (> (count-lines (point-min) (point-max)) 1)
 	  (error "File pattern maps to more than one file.")))
 
@@ -1608,6 +1607,7 @@ type \\[p4-blame]"
 	      (file2 (nth P4-FILE (cdr (cadr tmp-alst))))
 	      ins-string)
 	  (setq ins-string (format "%d\n" ch-2))
+	  (with-current-buffer buffer (erase-buffer))
 	  (p4-exec-p4 buffer (list "diff2"
 				   (format "%s@%d" file1 ch-1)
 				   (format "%s@%d" file2 ch-2)) t)
@@ -3668,6 +3668,7 @@ that."
 	(setq opened (cons (match-string 1) opened))))
     (if opened
 	(progn
+	  (with-current-buffer buffer (erase-buffer))
 	  (p4-exec-p4 buffer (list "diff") t)
 	  (save-excursion
 	    (set-buffer buffer)
