@@ -2414,27 +2414,28 @@ arguments to P4-OUT-COMMAND."
 buffer after editing is done using the minor mode key mapped to `C-c C-c'."
   (interactive)
   (message "p4 %s ..." p4-form-current-command)
-  (let ((max (point-max)) msg
-	(current-command p4-form-current-command)
-	(current-args p4-form-current-args))
-    (goto-char max)
-    (if (zerop (apply 'call-process-region (point-min)
-		      max (p4-check-p4-executable)
-		      nil '(t t) nil
-		      current-command "-i"
-		      current-args))
+  (let* ((buffer (p4-make-output-buffer "*P4*"))
+	 (inhibit-read-only t)
+	 (current-command p4-form-current-command)
+	 (current-args p4-form-current-args)
+	 (ret (apply 'call-process-region (point-min)
+		     (point-max) (p4-check-p4-executable)
+		     nil buffer nil
+		     current-command "-i"
+		     current-args)))
+    (with-current-buffer buffer
+      (if (= (count-lines (point-min) (point-max)) 1)
+	  (message (buffer-substring (point-min)
+				     (save-excursion
+				       (goto-char (point-min))
+				       (end-of-line)
+				       (point))))
+	(p4-push-window-config)
+	(display-buffer buffer)))
+    (if (zerop ret)
 	(progn
-	  (goto-char max)
-	  (setq msg (buffer-substring max (point-max)))
-	  (delete-region max (point-max))
-	  (save-excursion
-	    (set-buffer (p4-get-writable-output-buffer))
-	    (delete-region (point-min) (point-max))
-	    (insert msg))
 	  (kill-buffer nil)
-	  (display-buffer p4-output-buffer-name)
 	  (p4-partial-cache-cleanup current-command)
-	  (message "p4 %s done." current-command)
 	  (if (equal current-command "submit")
 	      (progn
 		(p4-refresh-files-in-buffers)
