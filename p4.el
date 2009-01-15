@@ -768,7 +768,7 @@ controlled files."
 (defun p4-simple-command-and-revert-buffer (cmd args)
   (p4-simple-command cmd args)
   (when (p4-buffer-file-name)
-    (revert-buffer)))
+    (revert-buffer t t)))
   
 (defun p4-call-command-process-filter (proc string)
   "Process filter for `p4-call-command'. Keep point position if `bobp'."
