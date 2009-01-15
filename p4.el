@@ -744,9 +744,9 @@ controlled files."
     (display-buffer p4-output-buffer-name)))
 
 (defun p4-simple-command (cmd args)
-  (let* ((buffer (p4-make-output-buffer p4-output-buffer-name))
+  (let* ((buffer (p4-make-output-buffer "*P4*"))
 	 (inhibit-read-only t)
-	 (ret (p4-exec-p4 (p4-get-writable-output-buffer) (cons cmd args))))
+	 (ret (p4-exec-p4 buffer (cons cmd args))))
     (p4-partial-cache-cleanup cmd)
     (with-current-buffer buffer
       (if (and
