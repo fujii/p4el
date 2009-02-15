@@ -2178,7 +2178,7 @@ character events"
 	  (p4-buffer-set-face-property "^=.*\n" 'p4-diff-file-face)
 	  (p4-buffer-set-face-property "^[@*].*" 'p4-diff-head-face)
 	  (p4-buffer-set-face-property "^\\([+>].*\n\\)+" 'p4-diff-inserted-face)
-	  (p4-buffer-set-face-property "^\\([-<].*\n\\)+" 'p4-diff-delleted-face)
+	  (p4-buffer-set-face-property "^\\([-<].*\n\\)+" 'p4-diff-deleted-face)
 	  (p4-buffer-set-face-property "^\\(!.*\n\\)+" 'p4-diff-change-face)))
 
     (goto-char (point-min))
