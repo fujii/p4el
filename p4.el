@@ -288,12 +288,6 @@ between them, that text will be marked with this face."
 	    "Face used for files deleted from the depot."
 	    :group 'p4-faces)
 
-(defface p4-depot-unmapped-face
-	    '((((class color) (background light)) (:foreground "grey30"))
-	      (((class color) (background dark)) (:foreground "grey70")))
-	    "Face used for files not mapped to the depot."
-	    :group 'p4-faces)
-
 
 ;; Now add a hook to find-file-hooks
 (add-hook 'find-file-hooks 'p4-find-file-hook)
@@ -1314,31 +1308,21 @@ name and a client name."
 
 (defun p4-mark-depot-list-buffer (&optional print-buffer)
   (save-excursion
-    (let (args files depot-regexp)
-      (goto-char (point-min))
-      (setq depot-regexp
-	    (if print-buffer
-		"\\(^\\)\\(//[^/@# ][^/@#]*/[^@#]+\\)#[0-9]+ - "
-	      "^\\(\\.\\.\\. [^/\n]*\\|==== \\)?\\(//[^/@# ][^/@#]*/[^#\n]*\\)"))
-      (while (re-search-forward depot-regexp nil t)
-	(setq args (cons (match-string 2) args)))
-      (setq files (p4-map-depot-files args))
+    (let ((depot-regexp
+	   (if print-buffer
+	       "\\(^\\)\\(//[^/@# ][^/@#]*/[^@#]+\\)#[0-9]+ - "
+	     "^\\(\\.\\.\\. [^/\n]*\\|==== \\)?\\(//[^/@# ][^/@#]*/[^#\n]*\\)")))
       (goto-char (point-min))
       (while (re-search-forward depot-regexp nil t)
-	(let ((p4-client-file (cdr (assoc (match-string 2) files)))
-	      (p4-depot-file (match-string 2))
+	(let ((p4-depot-file (match-string 2))
 	      (start (match-beginning 2))
 	      (end (match-end 2))
 	      (branching-op-p (and (match-string 1)
 				   (string-match "\\.\\.\\. \\.\\.\\..*"
 						 (match-string 1))))
 	      prop-list)
-	  (if (and p4-client-file
-		   (file-readable-p p4-client-file))
-	      (setq prop-list (list (cons 'link-client-name
-					  p4-client-file)))
-	    (setq prop-list (list (cons 'link-depot-name
-					p4-depot-file))))
+	  (setq prop-list (list (cons 'link-depot-name
+				      p4-depot-file)))
 	  ;; some kind of operation related to branching/integration
 	  (if branching-op-p
 	      (setq prop-list (append (list
@@ -1347,11 +1331,6 @@ name and a client name."
 					     'p4-depot-branched-face))
 				      prop-list)))
 	  (cond
-	   ((not p4-client-file)
-	    (p4-set-extent-properties
-	     start end
-	     (append (list (cons 'face 'p4-depot-unmapped-face))
-		     prop-list)))
 	   ((save-excursion
 	      (goto-char end)
 	      (looking-at ".* deleted?[ \n]"))
@@ -2073,10 +2052,7 @@ character events"
 (defun p4-find-file-or-print-other-window (client-name depot-name)
   (if client-name
       (find-file-other-window client-name)
-    (p4-noinput-buffer-action "print" nil t
-			      (list depot-name))
-    (p4-activate-print-buffer depot-name t)
-    (other-window 1)))
+    (p4-depot-find-file depot-name)))
 
 (defun p4-find-file-other-window ()
   "Open/print file"
@@ -2184,17 +2160,12 @@ character events"
     (goto-char (point-min))
     (while (re-search-forward "^\\(==== //\\).*\n"
 			      nil t)
-      (let* ((link-client-name (get-char-property (match-end 1) 'link-client-name))
-	     (link-depot-name (get-char-property (match-end 1) 'link-depot-name))
+      (let* ((link-depot-name (get-char-property (match-end 1) 'link-depot-name))
 	     (start (match-beginning 0))
 	     (end (save-excursion
 		    (if (re-search-forward "^==== " nil t)
 			(match-beginning 0)
 		      (point-max)))))
-	(if link-client-name
-	    (p4-set-extent-properties start end
-				      (list (cons 'block-client-name
-						  link-client-name))))
 	(if link-depot-name
 	    (p4-set-extent-properties start end
 				      (list (cons 'block-depot-name
