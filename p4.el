@@ -1730,7 +1730,7 @@ This is equivalent to \"sync -f\"
   (let ((arg-list (list "-m" "200" "...")))
     (if current-prefix-arg
 	(setq arg-list (p4-make-list-from-string
-			(p4-read-arg-string "p4 changes: " "-m 200"))))
+			(p4-read-arg-string "p4 changes: " "-m 200 ..."))))
     (p4-file-change-log "changes" arg-list)))
 
 ;; The p4 help command
