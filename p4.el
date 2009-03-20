@@ -3686,6 +3686,7 @@ that."
   (let ((map (p4-make-derived-map p4-basic-mode-map)))
     (define-key map "n" 'next-line)
     (define-key map "p" 'previous-line)
+    (define-key map "\C-m" 'p4-basic-list-activate)
     map)
   "The key map to use for selecting opened files.")
 
@@ -3699,6 +3700,12 @@ that."
     (beginning-of-line)
     (when (looking-at "^\\(//.*\\)#[0-9]+ - ")
       (match-string-no-properties 1))))
+
+(defun p4-basic-list-activate ()
+  (interactive)
+  (let ((file (p4-basic-list-get-filename)))
+    (when file
+      (p4-find-file-or-print-other-window nil file))))
 
 (define-derived-mode p4-basic-list-mode p4-basic-mode "P4 Basic List"
   (setq font-lock-defaults '(p4-basic-list-font-lock-keywords t)))
