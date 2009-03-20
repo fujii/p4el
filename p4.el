@@ -2577,7 +2577,8 @@ the current client."
 				 (if p4-my-clients
 				     p4-my-clients
 				   'p4-clients-completion)
-				 nil p4-strict-complete (p4-current-client))
+				 nil p4-strict-complete (p4-current-client)
+				 'p4-clients-history)
 		))
   (if (or (null p4-new-client-name) (equal p4-new-client-name "nil"))
       (progn
