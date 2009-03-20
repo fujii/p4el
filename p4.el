@@ -1320,23 +1320,7 @@ name and a client name."
 				       (cons 'face
 					     'p4-depot-branched-face))
 				      prop-list)))
-	  (cond
-	   ((save-excursion
-	      (goto-char end)
-	      (looking-at ".* deleted?[ \n]"))
-	    (p4-set-extent-properties
-	     start end
-	     (append (list (cons 'face 'p4-depot-deleted-face))
-		     prop-list)))
-	   ((save-excursion
-	      (goto-char end)
-	      (looking-at ".* \\(add\\|branch\\)\\(ed\\)?[ \n]"))
-	    (p4-create-active-link
-	     start end
-	     (append (list (cons 'face 'p4-depot-added-face))
-		     prop-list)))
-	   (t
-	    (p4-create-active-link start end prop-list))))))))
+	  (p4-create-active-link start end prop-list))))))
 
 ;; The p4 print command
 (defp4cmd p4-print ()
