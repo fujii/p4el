@@ -1195,10 +1195,7 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
       (setq args (list args)))
     (p4-call-command "files" args
 		     (concat "*P4 Files: (" (p4-current-client) ") " (car args) "*")
-		     'p4-basic-list-mode
-		     (lambda ()
-		       (p4-find-change-numbers (current-buffer) (point-min) (point-max))
-		       ))))
+		     'p4-basic-list-mode)))
 
 (defvar p4-server-version-cache nil)
 
