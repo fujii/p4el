@@ -152,7 +152,7 @@ This provides for a much faster `p4-find-file-hook'."
   :group 'p4)
 
 ;; Check for empty diffs at submit time
-(defcustom p4-check-empty-diffs t
+(defcustom p4-check-empty-diffs nil
   "Set this to check for files with empty diffs before submitting."
   :type 'boolean
   :group 'p4)
