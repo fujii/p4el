@@ -272,7 +272,7 @@ between them, that text will be marked with this face."
 
 (defface p4-depot-branched-face
 	    '((((class color) (background light)) (:foreground "blue4"))
-	      (((class color) (background dark)) (:foreground "cyan1")))
+	      (((class color) (background dark)) (:foreground "sky blue")))
 	    "Face used for branched files."
 	    :group 'p4-faces)
 
@@ -463,16 +463,6 @@ arguments to p4 commands."
   "The key map to use for selecting filelog properties.")
 
 (define-derived-mode p4-filelog-mode p4-basic-mode "P4 File Log")
-
-(defvar p4-opened-mode-map
-  (let ((map (p4-make-derived-map p4-basic-mode-map)))
-    (define-key map "n"	 'p4-next-depot-file)
-    (define-key map "p"	 'p4-prev-depot-file)
-    (define-key map "N" (lookup-key map "p"))
-    map)
-  "The key map to use for selecting opened files.")
-
-(define-derived-mode p4-opened-mode p4-basic-mode "P4 Opened")
 
 (defvar p4-diff-mode-map
   (let ((map (p4-make-derived-map p4-basic-mode-map)))
@@ -1205,10 +1195,10 @@ When visiting a depot file, type \\[p4-ediff2] and enter the versions.\n"
       (setq args (list args)))
     (p4-call-command "files" args
 		     (concat "*P4 Files: (" (p4-current-client) ") " (car args) "*")
-		     'p4-opened-mode
+		     'p4-basic-list-mode
 		     (lambda ()
 		       (p4-find-change-numbers (current-buffer) (point-min) (point-max))
-		       (p4-mark-depot-list-buffer)))))
+		       ))))
 
 (defvar p4-server-version-cache nil)
 
@@ -1688,10 +1678,10 @@ This is equivalent to \"sync -f\"
 		    (p4-read-arg-string "p4 refresh: ")))
       (setq args (list args)))
     (p4-call-command "refresh" args (concat "*P4 Refresh: (" (p4-current-client) ") " (car args) "*")
-		     'p4-opened-mode
+		     'p4-basic-list-mode
 		     (lambda ()
 		       (p4-refresh-files-in-buffers)
-		       (p4-mark-depot-list-buffer)))))
+		       ))))
 
 ;; The p4 get/sync command
 (defalias 'p4-sync 'p4-get)
@@ -1705,10 +1695,10 @@ This is equivalent to \"sync -f\"
 	(setq args (p4-make-list-from-string (p4-read-arg-string "p4 get: "))))
     (setq buffer )
     (p4-async-command "get" args
-		      (p4-make-output-buffer (concat "*P4 Get: (" (p4-current-client) ")*")) nil
+		      (p4-make-output-buffer (concat "*P4 Get: (" (p4-current-client) ")*")) 'p4-basic-list-mode
 		      (lambda ()
 			(p4-refresh-files-in-buffers)
-			(p4-mark-depot-list-buffer)))))
+			))))
 
 ;; The p4 have command
 (defp4cmd p4-have ()
@@ -1719,9 +1709,7 @@ This is equivalent to \"sync -f\"
 	(setq args (p4-make-list-from-string
 		    (p4-read-arg-string "p4 have: " (p4-buffer-file-name-2)))))
     (p4-call-command "have" args (concat "*P4 Have: (" (p4-current-client) ") " (car args) "*")
-		     'p4-opened-mode
-		     (lambda ()
-		       (p4-mark-depot-list-buffer)))))
+		     'p4-basic-list-mode)))
 
 ;; The p4 changes command
 (defp4cmd p4-changes ()
@@ -1757,8 +1745,7 @@ Argument ARG command for which help is needed.
   (let ((args (p4-make-list-from-string
 	       (p4-read-arg-string "p4 integ: " "-b "))))
     (p4-async-command "integ" args "*P4 integ*"
-		      'p4-opened-mode
-		      'p4-mark-depot-list-buffer)))
+		      'p4-basic-list-mode)))
 
 (defp4cmd p4-resolve ()
   "resolve"
@@ -2236,8 +2223,7 @@ character events"
 (defun p4-opened-internal (args)
   (let ((p4-client (p4-current-client)))
     (p4-call-command "opened" args (concat "*Opened Files: " p4-client "*")
-		     'p4-opened-mode
-		     'p4-mark-depot-list-buffer)))
+		     'p4-basic-list-mode)))
 
 (defun p4-update-opened-list ()
   ;; (when (get-buffer-window (concat "*Opened Files: " (p4-current-client) "*"))
@@ -2495,8 +2481,7 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
   (let ((args (p4-make-list-from-string
 	       (p4-read-arg-string "p4 labelsync: "))))
     (p4-call-command "labelsync" args "*P4 labelsync*"
-		     'p4-opened-mode
-		     'p4-mark-depot-list-buffer)))
+		     'p4-basic-list-mode)))
 
 (defun p4-filter-out (pred lst)
   (let (res)
@@ -3103,7 +3088,8 @@ making the file writable and write protected."
 	((get-char-property (point) 'block-depot-name))
 	((if (and (fboundp 'dired-get-filename)
 		  (dired-get-filename nil t))
-	     (p4-follow-link-name (dired-get-filename nil t))))))
+	     (p4-follow-link-name (dired-get-filename nil t))))
+	((p4-basic-list-get-filename))))
 
 (defun p4-buffer-file-name ()
   (cond (buffer-file-name
@@ -3693,6 +3679,29 @@ that."
     (if current-prefix-arg
 	(setq args (list (p4-read-arg-string "p4 logout: "))))
     (p4-simple-command "logout" args)))
+
+;; P4 Basic List Mode
+
+(defvar p4-basic-list-mode-map
+  (let ((map (p4-make-derived-map p4-basic-mode-map)))
+    (define-key map "n" 'next-line)
+    (define-key map "p" 'previous-line)
+    map)
+  "The key map to use for selecting opened files.")
+
+(defvar p4-basic-list-font-lock-keywords
+  '(("^\\(//.*\\)#[0-9]+ - delete" 1 'p4-depot-deleted-face)
+    ("^\\(//.*\\)#[0-9]+ - add" 1 'p4-depot-added-face)
+    ("^\\(//.*\\)#[0-9]+ - branch" 1 'p4-depot-branched-face)))
+
+(defun p4-basic-list-get-filename ()
+  (save-excursion
+    (beginning-of-line)
+    (when (looking-at "^\\(//.*\\)#[0-9]+ - ")
+      (match-string-no-properties 1))))
+
+(define-derived-mode p4-basic-list-mode p4-basic-mode "P4 Basic List"
+  (setq font-lock-defaults '(p4-basic-list-font-lock-keywords t)))
 
 (provide 'p4)
 
