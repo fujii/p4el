@@ -959,7 +959,7 @@ When visiting a depot file, type \\[p4-diff2] and enter the versions.\n"
     (p4-call-command "diff2" (append diff-options
 				     (list diff-version1
 					   diff-version2))
-		     "*P4 diff2*" 'p4-activate-diff-buffer)))
+		     "*P4 diff2*" 'p4-diff-mode 'p4-activate-diff-buffer)))
 
 ;; p4-ediff for all those who diff using ediff
 
