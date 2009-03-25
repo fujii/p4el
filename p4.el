@@ -1965,7 +1965,7 @@ character events"
 	  (action
 	   (let ((rev2 (int-to-string (1- (string-to-number rev)))))
 	     (if (> (string-to-number rev2) 0)
-		 (p4-diff2 (concat "#" rev) (concat "#" rev2))
+		 (p4-diff2 (concat "#" rev2) (concat "#" rev))
 	       (error "There is no earlier revision to diff."))))
 	  (change (p4-describe-internal
 		   (append (p4-make-list-from-string p4-default-diff-options)
