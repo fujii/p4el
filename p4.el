@@ -801,7 +801,12 @@ controlled files."
       (with-current-buffer buffer
 	(when callback
 	  (funcall callback))
-	(insert "Process " (process-name process) " " message)
+	(let ((moving (= (point) (process-mark process))))
+	  (save-excursion
+	    (goto-char (process-mark process))
+	    (insert "Process " (process-name process) " " message)
+	    (set-marker (process-mark process) (point)))
+	  (if moving (goto-char (process-mark process))))
 	(unless (string-equal message "finished\n")
 	  (ding))
 	(set-buffer-modified-p nil)))))
