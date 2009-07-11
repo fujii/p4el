@@ -1696,12 +1696,8 @@ This is equivalent to \"sync -f\"
 ;; The p4 help command
 (defp4cmd p4-help (&rest args)
   "help" "To print help message, type \\[p4-help].
-
-Argument ARG command for which help is needed.
-"
-  (interactive (p4-make-list-from-string
-		(p4-read-arg-string "p4 help: "
-				    nil "help")))
+Argument ARG command for which help is needed."
+  (interactive (p4-read-args "p4 help: "))
   (p4-call-command "help" args "*P4 help*"))
 
 ;; The p4 info command
@@ -1713,11 +1709,9 @@ Argument ARG command for which help is needed.
 ;; The p4 integrate command
 (defp4cmd p4-integ ()
   "integ" "To schedule integrations between branches, type \\[p4-integ].\n"
-  (interactive)
-  (let ((args (p4-make-list-from-string
-	       (p4-read-arg-string "p4 integ: " "-b "))))
-    (p4-async-command "integ" args "*P4 integ*"
-		      'p4-basic-list-mode)))
+  (interactive (p4-read-args "p4 integ: " nil "-b "))
+  (p4-async-command "integ" args "*P4 integ*"
+		    'p4-basic-list-mode))
 
 (defp4cmd p4-resolve (&rest args)
   "resolve"
@@ -2178,16 +2172,11 @@ character events"
 		   'p4-activate-diff-buffer))
 
 ;; The p4 opened command
-(defp4cmd p4-opened ()
+(defp4cmd p4-opened (&rest args)
   "opened"
   "To display list of files opened for pending change, type \\[p4-opened].\n"
-  (interactive)
-  (let (args)
-    (if current-prefix-arg
-	(setq args (p4-make-list-from-string
-		    (p4-read-arg-string "p4 opened: "
-					(p4-buffer-file-name-2)))))
-    (p4-opened-internal args)))
+  (interactive (p4-read-args* "p4 opened: "))
+  (p4-opened-internal args))
 
 (defun p4-opened-internal (args)
   (let ((p4-client (p4-current-client)))
@@ -2212,53 +2201,37 @@ character events"
     (setq buffer-read-only t)))
 
 ;; The p4 users command
-(defp4cmd p4-users ()
+(defp4cmd p4-users (&rest args)
   "users" "To display list of known users, type \\[p4-users].\n"
-  (interactive)
-  (let (args)
-    (if current-prefix-arg
-	(setq args (p4-make-list-from-string
-		    (p4-read-arg-string "p4 users: " nil "user"))))
-    (p4-call-command "users" args "*P4 users*" nil
-		     (lambda ()
-		       (p4-regexp-create-links "*P4 users*" "^\\([^ ]+\\).*\n" 'user)))))
+  (interactive (p4-read-args* "p4 users: " "user"))
+  (p4-call-command "users" args "*P4 users*" nil
+		   (lambda ()
+		     (p4-regexp-create-links "*P4 users*" "^\\([^ ]+\\).*\n" 'user))))
 
-(defp4cmd p4-groups ()
+(defp4cmd p4-groups (&rest args)
   "groups" "To display list of known groups, type \\[p4-groups].\n"
-  (interactive)
-  (let (args)
-    (if current-prefix-arg
-	(setq args (p4-make-list-from-string
-		    (p4-read-arg-string "p4 groups: " nil "group"))))
-    (p4-call-command "groups" args "*P4 groups*" nil
-		     (lambda ()
-		       (p4-regexp-create-links "*P4 groups*" "^\\(.*\\)\n" 'group)))))
+  (interactive (p4-read-args* "p4 groups: " "group"))
+  (p4-call-command "groups" args "*P4 groups*" nil
+		   (lambda ()
+		     (p4-regexp-create-links "*P4 groups*" "^\\(.*\\)\n" 'group))))
 
 ;; The p4 jobs command
-(defp4cmd p4-jobs ()
+(defp4cmd p4-jobs (&rest args)
   "jobs" "To display list of jobs, type \\[p4-jobs].\n"
-  (interactive)
-  (let (args)
-    (if current-prefix-arg
-	(setq args (p4-make-list-from-string (p4-read-arg-string "p4 jobs: "))))
-    (p4-call-command "jobs" args "*P4 jobs*")))
+  (interactive (p4-read-args* "p4 jobs: "))
+  (p4-call-command "jobs" args "*P4 jobs*"))
 
 ;; The p4 fix command
-(defp4cmd p4-fix ()
+(defp4cmd p4-fix (&rest args)
   "fix" "To mark jobs as being fixed by a changelist number, type \\[p4-fix].\n"
-  (interactive)
-  (let ((args (p4-make-list-from-string (p4-read-arg-string "p4 fix: "
-							    nil "job"))))
-    (p4-call-command "fix" args p4-output-buffer-name)))
+  (interactive (p4-read-args "p4 fix: " "job"))
+  (p4-call-command "fix" args p4-output-buffer-name))
 
 ;; The p4 fixes command
-(defp4cmd p4-fixes ()
+(defp4cmd p4-fixes (&rest args)
   "fixes" "To list what changelists fix what jobs, type \\[p4-fixes].\n"
-  (interactive)
-  (let (args)
-    (if current-prefix-arg
-	(setq args (p4-make-list-from-string (p4-read-arg-string "p4 fixes: "))))
-    (p4-call-command "fixes" args "*P4 fixes*")))
+  (interactive (p4-read-args* "p4 fixes: "))
+  (p4-call-command "fixes" args "*P4 fixes*"))
 
 ;; The p4 where command
 (defp4cmd p4-where ()
