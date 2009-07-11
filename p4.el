@@ -1672,51 +1672,37 @@ This is equivalent to \"sync -f\"
 ;; The p4 get/sync command
 (defalias 'p4-sync 'p4-get)
 
-(defp4cmd p4-get ()
+(defp4cmd p4-get (&rest args)
   "sync"
   "To synchronise the local view with the depot, type \\[p4-get].\n"
-  (interactive)
-  (let (args buffer)
-    (if current-prefix-arg
-	(setq args (p4-make-list-from-string (p4-read-arg-string "p4 get: "))))
-    (setq buffer )
-    (p4-async-command "get" args
-		      (p4-make-output-buffer (concat "*P4 Get: (" (p4-current-client) ")*")) 'p4-basic-list-mode
-		      (lambda ()
-			(p4-refresh-files-in-buffers)
-			))))
+  (interactive (p4-read-args "p4 get: "))
+  (p4-async-command "get" args
+		    (p4-make-output-buffer (concat "*P4 Get: (" (p4-current-client) ")*")) 'p4-basic-list-mode
+		    'p4-refresh-files-in-buffers))
 
 ;; The p4 have command
-(defp4cmd p4-have ()
+(defp4cmd p4-have (&rest args)
   "have" "To list revisions last gotten, type \\[p4-have].\n"
-  (interactive)
-  (let ((args (list "...")))
-    (if current-prefix-arg
-	(setq args (p4-make-list-from-string
-		    (p4-read-arg-string "p4 have: " (p4-buffer-file-name-2)))))
-    (p4-call-command "have" args (concat "*P4 Have: (" (p4-current-client) ") " (car args) "*")
-		     'p4-basic-list-mode)))
+  (interactive (p4-read-args "p4 have: " nil (p4-buffer-file-name-2)))
+  (p4-call-command "have" args (concat "*P4 Have: (" (p4-current-client) ") " (car args) "*")
+		   'p4-basic-list-mode))
 
 ;; The p4 changes command
-(defp4cmd p4-changes ()
+(defp4cmd p4-changes (&rest args)
   "changes" "To list changes, type \\[p4-changes].\n"
-  (interactive)
-  (let ((arg-list (list "-m" "200" "...")))
-    (if current-prefix-arg
-	(setq arg-list (p4-make-list-from-string
-			(p4-read-arg-string "p4 changes: " "-m 200 ..."))))
-    (p4-file-change-log "changes" arg-list)))
+  (interactive (p4-read-args "p4 changes: " nil "-m" "200" "..."))
+  (p4-file-change-log "changes" args))
 
 ;; The p4 help command
-(defp4cmd p4-help (arg)
+(defp4cmd p4-help (&rest args)
   "help" "To print help message, type \\[p4-help].
 
 Argument ARG command for which help is needed.
 "
-  (interactive (list (p4-make-list-from-string
-		      (p4-read-arg-string "Help on which command: "
-					  nil "help"))))
-  (p4-call-command "help" arg "*P4 help*"))
+  (interactive (p4-make-list-from-string
+		(p4-read-arg-string "p4 help: "
+				    nil "help")))
+  (p4-call-command "help" args "*P4 help*"))
 
 ;; The p4 info command
 (defp4cmd p4-info ()
@@ -1733,14 +1719,11 @@ Argument ARG command for which help is needed.
     (p4-async-command "integ" args "*P4 integ*"
 		      'p4-basic-list-mode)))
 
-(defp4cmd p4-resolve ()
+(defp4cmd p4-resolve (&rest args)
   "resolve"
   "To merge open files with other revisions or files, type \\[p4-resolve].\n"
-  (interactive)
-  (let (buffer args (buf-name "*p4 resolve*"))
-    (if current-prefix-arg
-	(setq args (p4-make-list-from-string
-		    (p4-read-arg-string "p4 resolve: " nil))))
+  (interactive (p4-read-args "p4 resolve: "))
+  (let (buffer (buf-name "*p4 resolve*"))
     (setq buffer (get-buffer buf-name))
     (if (and (buffer-live-p buffer)
 	     (not (comint-check-proc buffer)))
@@ -2406,10 +2389,7 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
 ;; The p4 client command
 (defp4cmd p4-client (&rest args)
   "client" "To edit a client specification, type \\[p4-client].\n"
-  (interactive   
-   (if current-prefix-arg
-       (p4-make-list-from-string
-	(p4-read-arg-string "p4 client: " nil "client"))))
+  (interactive (p4-read-args "p4 client: " "client"))
   (let ((client-buf-name "*P4 client*"))
     (p4-form-command "client" "\\(Description\\|View\\):\n\t"
 		     client-buf-name nil args)))
