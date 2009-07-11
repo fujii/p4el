@@ -2414,10 +2414,10 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
     (p4-form-command "client" "\\(Description\\|View\\):\n\t"
 		     client-buf-name nil args)))
 
-(defp4cmd p4-clients ()
+(defp4cmd p4-clients (&rest args)
   "clients" "To list all clients, type \\[p4-clients].\n"
-  (interactive)
-  (p4-call-command "clients" nil "*P4 clients*" nil
+  (interactive (p4-read-args "p4 clients: "))
+  (p4-call-command "clients" args "*P4 clients*" nil
 		   (lambda ()
 		     (p4-regexp-create-links "*P4 clients*" "^Client \\([^ ]+\\).*\n" 'client))))
 
@@ -2433,10 +2433,10 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
 			     (car (reverse args)) "*")
 		     "branch" args)))
 
-(defp4cmd p4-branches ()
+(defp4cmd p4-branches (&rest args)
   "branches" "To list all branches, type \\[p4-branches].\n"
-  (interactive)
-  (p4-call-command "branches" nil "*P4 branches*" nil
+  (interactive (p4-read-args "p4 branches: "))
+  (p4-call-command "branches" args "*P4 branches*" nil
 		   (lambda ()
 		     (p4-regexp-create-links "*P4 branches*" "^Branch \\([^ ]+\\).*\n" 'branch))))
 
@@ -3375,6 +3375,12 @@ file name selection.")
 			    'p4-group-string-completion))
 		     nil nil
 		     initial 'p4-arg-string-history)))
+
+(defun p4-read-args (prompt &optional type &rest args)
+  (if current-prefix-arg
+      (p4-make-list-from-string
+       (p4-read-arg-string prompt (p4-list-to-string args) type))
+    args))
 
 (defun p4-arg-string-completion (string predicate action)
   (let ((first-part "") completion)
