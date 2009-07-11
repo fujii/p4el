@@ -1675,7 +1675,7 @@ This is equivalent to \"sync -f\"
 (defp4cmd p4-get (&rest args)
   "sync"
   "To synchronise the local view with the depot, type \\[p4-get].\n"
-  (interactive (p4-read-args "p4 get: "))
+  (interactive (p4-read-args* "p4 get: "))
   (p4-async-command "get" args
 		    (p4-make-output-buffer (concat "*P4 Get: (" (p4-current-client) ")*")) 'p4-basic-list-mode
 		    'p4-refresh-files-in-buffers))
@@ -1683,14 +1683,14 @@ This is equivalent to \"sync -f\"
 ;; The p4 have command
 (defp4cmd p4-have (&rest args)
   "have" "To list revisions last gotten, type \\[p4-have].\n"
-  (interactive (p4-read-args "p4 have: " nil (p4-buffer-file-name-2)))
+  (interactive (p4-read-args* "p4 have: " nil (p4-buffer-file-name-2)))
   (p4-call-command "have" args (concat "*P4 Have: (" (p4-current-client) ") " (car args) "*")
 		   'p4-basic-list-mode))
 
 ;; The p4 changes command
 (defp4cmd p4-changes (&rest args)
   "changes" "To list changes, type \\[p4-changes].\n"
-  (interactive (p4-read-args "p4 changes: " nil "-m" "200" "..."))
+  (interactive (p4-read-args* "p4 changes: " nil "-m" "200" "..."))
   (p4-file-change-log "changes" args))
 
 ;; The p4 help command
@@ -1722,7 +1722,7 @@ Argument ARG command for which help is needed.
 (defp4cmd p4-resolve (&rest args)
   "resolve"
   "To merge open files with other revisions or files, type \\[p4-resolve].\n"
-  (interactive (p4-read-args "p4 resolve: "))
+  (interactive (p4-read-args* "p4 resolve: "))
   (let (buffer (buf-name "*p4 resolve*"))
     (setq buffer (get-buffer buf-name))
     (if (and (buffer-live-p buffer)
@@ -2389,14 +2389,14 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
 ;; The p4 client command
 (defp4cmd p4-client (&rest args)
   "client" "To edit a client specification, type \\[p4-client].\n"
-  (interactive (p4-read-args "p4 client: " "client"))
+  (interactive (p4-read-args* "p4 client: " "client"))
   (let ((client-buf-name "*P4 client*"))
     (p4-form-command "client" "\\(Description\\|View\\):\n\t"
 		     client-buf-name nil args)))
 
 (defp4cmd p4-clients (&rest args)
   "clients" "To list all clients, type \\[p4-clients].\n"
-  (interactive (p4-read-args "p4 clients: "))
+  (interactive (p4-read-args* "p4 clients: "))
   (p4-call-command "clients" args "*P4 clients*" nil
 		   (lambda ()
 		     (p4-regexp-create-links "*P4 clients*" "^Client \\([^ ]+\\).*\n" 'client))))
@@ -2415,7 +2415,7 @@ buffer after editing is done using the minor mode key mapped to `C-c C-c'."
 
 (defp4cmd p4-branches (&rest args)
   "branches" "To list all branches, type \\[p4-branches].\n"
-  (interactive (p4-read-args "p4 branches: "))
+  (interactive (p4-read-args* "p4 branches: "))
   (p4-call-command "branches" args "*P4 branches*" nil
 		   (lambda ()
 		     (p4-regexp-create-links "*P4 branches*" "^Branch \\([^ ]+\\).*\n" 'branch))))
@@ -3357,9 +3357,12 @@ file name selection.")
 		     initial 'p4-arg-string-history)))
 
 (defun p4-read-args (prompt &optional type &rest args)
+  (p4-make-list-from-string
+   (p4-read-arg-string prompt (p4-list-to-string args) type)))
+
+(defun p4-read-args* (prompt &optional type &rest args)
   (if current-prefix-arg
-      (p4-make-list-from-string
-       (p4-read-arg-string prompt (p4-list-to-string args) type))
+      (apply 'p4-read-args prompt type args)
     args))
 
 (defun p4-arg-string-completion (string predicate action)
