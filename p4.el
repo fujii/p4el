@@ -1707,7 +1707,7 @@ Argument ARG command for which help is needed."
   (p4-call-command "info" nil "*P4 info*"))
 
 ;; The p4 integrate command
-(defp4cmd p4-integ ()
+(defp4cmd p4-integ (&rest args)
   "integ" "To schedule integrations between branches, type \\[p4-integ].\n"
   (interactive (p4-read-args "p4 integ: " nil "-b "))
   (p4-async-command "integ" args "*P4 integ*"
